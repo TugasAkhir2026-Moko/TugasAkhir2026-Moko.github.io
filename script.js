@@ -364,10 +364,9 @@ function applyRealtimeData(data) {
 
     // Jarak deteksi PIR bersifat tetap (spesifikasi hardware HC-SR501), tidak perlu diperbarui realtime
 
-    if (data.logs) {
-        logsData = Object.values(data.logs).reverse();
-        renderLogs();
-    }
+    // Selalu update logsData & render, termasuk saat logs kosong/undefined (misal setelah "Kosongkan Log")
+    logsData = data.logs ? Object.values(data.logs).reverse() : [];
+    renderLogs();
 
     $('sim-pir').checked = data.pir_sensor;
     $('sim-speaker').checked = data.play_sound || false;
@@ -509,30 +508,33 @@ function onSimulationChange() {
 
 // -------------------------------------------------------------
 // PENGUSIR HAMA - Trigger Firebase ke ESP32 + DFPlayer Mini
-// Sekali klik akan kirim perintah play, lalu otomatis reset setelah beberapa detik.
+// Suara TIDAK diputar di browser. Semua suara diputar oleh
+// DFPlayer Mini yang terhubung langsung ke ESP32 di lapangan.
+// Dashboard hanya mengirim perintah via Firebase.
 // -------------------------------------------------------------
 let soundRepellerActive = false;
-let soundRepellerTimer = null;
+const SOUND_DURATION_MS = 5000; // Durasi suara berbunyi (5 detik) — sesuaikan dengan panjang track DFPlayer
 
 function triggerSoundRepeller() {
+    // Push button: jika sedang aktif, abaikan klik berikutnya sampai selesai berbunyi
     if (soundRepellerActive) return;
 
     soundRepellerActive = true;
     const btn = $('btn-sound-repeller');
-    const originalHtml = btn.innerHTML;
-
     btn.disabled = true;
-    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>MENGIRIM...</span>`;
+    btn.innerHTML = `<i class="fa-solid fa-volume-high animate-pulse"></i><span>MEMBUNYIKAN...</span>`;
+    btn.classList.add('opacity-70', 'cursor-not-allowed');
 
     showToast("🔊 Perintah suara dikirim ke ESP32!", "success");
 
     const t = new Date().toLocaleTimeString('id-ID');
-
     if (!isDemoMode && dbRef) {
+        // Kirim perintah ke Firebase → ESP32 baca → DFPlayer Mini bunyi
         dbRef.update({ play_sound: true });
         dbRef.child('logs').push().set({ waktu: t, pir: false, pagar: true, ket: "Suara pengusir dipicu manual oleh Admin" });
     } else {
-        logsData.unshift({ waktu: t, pir: false, pagar: true, ket: "Suara pengusir dipicu (Demo - tidak ada suara)" });
+        // Mode demo: hanya update UI & log, tidak ada suara
+        logsData.unshift({ waktu: t, pir: false, pagar: true, ket: "Suara pengusir dipicu manual (Demo - tidak ada suara)" });
         applyRealtimeData({
             total_deteksi: parseInt($('stat-total-deteksi').innerText),
             pir_sensor: false,
@@ -542,27 +544,20 @@ function triggerSoundRepeller() {
         });
     }
 
-    clearTimeout(soundRepellerTimer);
-    soundRepellerTimer = setTimeout(() => {
-        if (!isDemoMode && dbRef) {
-            dbRef.update({ play_sound: false });
-        }
-        soundRepellerActive = false;
-        btn.disabled = false;
-        btn.innerHTML = originalHtml;
-        showToast("🔇 Suara berhenti otomatis", "info");
-    }, 5000);
+    // Otomatis reset setelah durasi suara selesai — tidak perlu diklik lagi untuk mematikan
+    setTimeout(stopSoundRepeller, SOUND_DURATION_MS);
 }
 
 function stopSoundRepeller() {
     soundRepellerActive = false;
-    clearTimeout(soundRepellerTimer);
 
     const btn = $('btn-sound-repeller');
     btn.disabled = false;
     btn.innerHTML = `<i class="fa-solid fa-volume-high"></i><span>PICU SUARA PENGUSIR</span>`;
+    btn.classList.remove('opacity-70', 'cursor-not-allowed');
 
     if (!isDemoMode && dbRef) {
+        // Beritahu ESP32 bahwa durasi suara sudah selesai
         dbRef.update({ play_sound: false });
     }
 
