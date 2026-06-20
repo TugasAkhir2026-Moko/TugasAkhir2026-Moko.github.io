@@ -240,6 +240,11 @@ function toggleDemoMode() {
         showToast("Mode Simulasi Aktif (Virtual / Offline)", "info");
         setupLocalDummyData();
     } else {
+        // Reset PIR & suara ke kondisi aman saat keluar dari Mode Simulasi
+        soundRepellerActive = false;
+        logsData = [];
+        applyRealtimeData({ total_deteksi: 0, pir_sensor: false, play_sound: false, jarak_objek: 0, rssi: null, logs: [] });
+
         const savedFb = localStorage.getItem('fb_config');
         if (savedFb) {
             fbConfig = JSON.parse(savedFb);
@@ -388,7 +393,9 @@ function setupLocalDummyData() {
         { waktu: "13:05:00", pir: false, pagar: true, ket: "Keadaan normal kembali" },
         { waktu: "15:45:22", pir: true,  pagar: true, ket: "Monyet Terdeteksi - Respon Cepat" }
     ];
-    applyRealtimeData({ total_deteksi: 14, pir_sensor: false, play_sound: false, jarak_objek: 3, rssi: -55, logs: logsData });
+    // Saat Mode Simulasi diaktifkan, PIR & Suara otomatis ON agar langsung terlihat aktif
+    // (tetap bisa di-toggle manual ON/OFF setelahnya lewat tab Sensors)
+    applyRealtimeData({ total_deteksi: 14, pir_sensor: true, play_sound: true, jarak_objek: 3, rssi: -55, logs: logsData });
 }
 
 // -------------------------------------------------------------
