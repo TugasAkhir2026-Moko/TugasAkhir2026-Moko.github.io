@@ -296,7 +296,7 @@ function initFirebase() {
 
             dbRef.on('value', snap => {
                 const data = snap.val();
-                if (data && !isDemoMode) applyRealtimeData(data);
+                if (!isDemoMode) applyRealtimeData(data || {});
             }, err => {
                 showToast("Firebase Error: " + err.message, "error");
                 updateConnectionStatusUI('unconfigured');
@@ -565,16 +565,19 @@ function stopSoundRepeller() {
 }
 
 function clearAllLogs() {
-    if (confirm("Hapus seluruh catatan log aktivitas?")) {
-        if (!isDemoMode && dbRef) {
-            dbRef.child('logs').remove();
-            dbRef.update({ total_deteksi: 0 });
-        } else {
-            logsData = [];
-            applyRealtimeData({ total_deteksi: 0, pir_sensor: false, play_sound: false, jarak_objek: 3, rssi: -55, logs: [] });
-        }
-        showToast("Log berhasil dibersihkan", "success");
+    if (!confirm("Hapus seluruh catatan log aktivitas?")) return;
+
+    logsData = [];
+    renderLogs(); // langsung kosongkan tampilan tanpa menunggu Firebase round-trip
+
+    if (!isDemoMode && dbRef) {
+        dbRef.child('logs').remove();
+        dbRef.update({ total_deteksi: 0 });
+    } else {
+        applyRealtimeData({ total_deteksi: 0, pir_sensor: false, play_sound: false, jarak_objek: 3, rssi: -55, logs: [] });
     }
+
+    showToast("Log berhasil dibersihkan", "success");
 }
 
 function exportLogs() {
