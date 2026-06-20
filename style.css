@@ -1,0 +1,31 @@
+/* ================================================================= */
+/* GAYA CSS KUSTOM - MonkeyGuard Dashboard                           */
+/* ================================================================= */
+
+/* Efek transisi halus saat berganti warna tema (terang/gelap) */
+.transition-all-300 {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animasi berdenyut lembut untuk kartu sensor saat mendeteksi monyet */
+@keyframes pulse-subtle {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%       { transform: scale(1.02); opacity: 0.95; }
+}
+.animate-pulse-subtle {
+    animation: pulse-subtle 2s infinite ease-in-out;
+}
+
+/* Desain kustom untuk scrollbar agar terlihat lebih tipis dan rapi */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.dark ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 3px;
+}

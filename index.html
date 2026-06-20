@@ -3,92 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MonkeyGuard - Sistem Pengusir Hama Monyet</title>
-    
-    <!-- ================================================================= -->
-    <!-- 1. IMPORT PERANGKAT LUNAK EKSTERNAL (CDN & FONTS)                 -->
-    <!-- ================================================================= -->
-    <!-- Google Fonts: Mengimpor font 'Inter' agar tampilan teks terlihat modern -->
+    <title>MonkeyGuard Sistem pengusir Hama Monyet</title>
+
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome: Untuk menampilkan ikon-ikon menarik (seperti wifi, awan, gembok, dll) -->
+
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Chart.js: Pustaka pembuat grafik batang/garis interaktif -->
+
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Firebase Compat: Untuk menghubungkan dashboard dengan database realtime cloud -->
+
+    <!-- Firebase Compat -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
-    <!-- Tailwind CSS: Framework CSS untuk mendesain halaman dengan cepat via class -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Konfigurasi custom warna tema untuk mode terang & gelap pada Tailwind
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
-                        // Palet Warna Terang (Forest & Sky)
-                        lightBg: '#F0F4F8', 
-                        lightSidebar: '#1A5276', 
-                        lightAccent: '#27AE60', 
-                        lightAlert: '#E74C3C',
-                        // Palet Warna Gelap (Deep Night)
-                        darkBg: '#0F172A', 
-                        darkCard: '#1E293B', 
-                        darkAccent: '#22C55E', 
-                        darkAlert: '#EF4444',
+                        lightBg:      '#F0F4F8',
+                        lightSidebar: '#1A5276',
+                        lightAccent:  '#27AE60',
+                        lightAlert:   '#E74C3C',
+                        darkBg:       '#0F172A',
+                        darkCard:     '#1E293B',
+                        darkAccent:   '#22C55E',
+                        darkAlert:    '#EF4444',
                     }
                 }
             }
         }
     </script>
-    
-    <!-- ================================================================= -->
-    <!-- 2. GAYA CSS KUSTOM (CUSTOM STYLES & ANIMATIONS)                   -->
-    <!-- ================================================================= -->
-    <style>
-        /* Efek transisi halus saat berganti warna tema (terang/gelap) */
-        .transition-all-300 { 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-        }
-        
-        /* Animasi berdenyut lembut untuk kartu sensor saat mendeteksi monyet */
-        @keyframes pulse-subtle { 
-            0%, 100% { transform: scale(1); opacity: 1; } 
-            50% { transform: scale(1.02); opacity: 0.95; } 
-        }
-        .animate-pulse-subtle { 
-            animation: pulse-subtle 2s infinite ease-in-out; 
-        }
-        
-        /* Desain kustom untuk scrollbar agar terlihat lebih tipis dan rapi */
-        ::-webkit-scrollbar { 
-            width: 6px; 
-            height: 6px; 
-        }
-        .dark ::-webkit-scrollbar-thumb { 
-            background: #334155; 
-            border-radius: 3px; 
-        }
-        ::-webkit-scrollbar-thumb { 
-            background: #CBD5E1; 
-            border-radius: 3px; 
-        }
-    </style>
+
+    <!-- CSS Kustom -->
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body class="font-sans transition-colors duration-300 bg-[#F0F4F8] dark:bg-darkBg text-slate-800 dark:text-slate-100 min-h-screen flex overflow-x-hidden">
 
-    <!-- ================================================================= -->
-    <!-- 3. STRUKTUR HTML (INTERFACE / TAMPILAN)                           -->
-    <!-- ================================================================= -->
-
-    <!-- BAGIAN A: HALAMAN LOGIN (OVERLAY SEMENTARA SEBELUM LOGIN) -->
+    <!-- ============================================================= -->
+    <!-- BAGIAN A: HALAMAN LOGIN                                        -->
+    <!-- ============================================================= -->
     <div id="login-overlay" class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/80 dark:bg-black/90 backdrop-blur-md transition-opacity duration-500">
         <div class="bg-white dark:bg-darkCard w-full max-w-md p-8 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 m-4">
             <div class="text-center mb-6">
@@ -96,10 +59,8 @@
                     <i class="fa-solid fa-shield-cat text-3xl text-white animate-bounce"></i>
                 </div>
                 <h2 class="text-2xl font-extrabold tracking-tight">Login MonkeyGuard</h2>
-                <p class="text-xs text-slate-400 mt-1">Gunakan username <span class="font-bold">admin</span> & password <span class="font-bold">admin123</span></p>
+                <p class="text-xs text-slate-400 mt-1">Sistem Monitoring Pengusir Hama Monyet</p>
             </div>
-            
-            <!-- Form Login -->
             <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Username</label>
@@ -122,20 +83,19 @@
         </div>
     </div>
 
-    <!-- BAGIAN B: SIDEBAR NAVIGASI (KIRI) -->
+    <!-- ============================================================= -->
+    <!-- BAGIAN B: SIDEBAR NAVIGASI                                     -->
+    <!-- ============================================================= -->
     <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 flex flex-col w-64 bg-[#1A5276] text-white transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out shadow-2xl justify-between">
         <div>
-            <!-- Header Brand Sidebar -->
             <div class="flex items-center justify-between px-6 py-5 border-b border-[#2471A3]">
                 <div class="flex items-center space-x-3">
                     <div class="p-2 bg-emerald-500 rounded-xl shadow-lg shadow-emerald-500/30"><i class="fa-solid fa-shield-cat text-lg text-white"></i></div>
                     <h1 class="text-lg font-bold tracking-wider">MonkeyGuard</h1>
                 </div>
-                <!-- Tombol Tutup Sidebar (Hanya muncul di HP / Layar Kecil) -->
                 <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-[#2471A3]"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            
-            <!-- Menu Navigasi Sidebar -->
+
             <nav class="mt-6 px-4 space-y-1.5">
                 <a href="#dashboard" onclick="switchTab('dashboard')" class="nav-item flex items-center space-x-3.5 px-4 py-3 rounded-xl transition-all-300 bg-white/10 text-white font-medium" id="menu-dashboard">
                     <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i><span>Dashboard Utama</span>
@@ -151,10 +111,8 @@
                 </a>
             </nav>
         </div>
-        
-        <!-- Bagian Bawah Sidebar (Theme Toggle & Profil Pengguna) -->
+
         <div class="p-4 border-t border-[#2471A3] space-y-4">
-            <!-- Tombol Pengubah Tema Terang / Gelap -->
             <button onclick="toggleDarkMode()" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-black/15 hover:bg-black/25 transition-all-300 group">
                 <span class="text-sm font-medium text-slate-200">Mode Tampilan</span>
                 <div class="flex items-center space-x-2">
@@ -163,8 +121,6 @@
                     <i id="theme-icon-dark" class="fa-solid fa-moon text-indigo-300 text-sm hidden"></i>
                 </div>
             </button>
-            
-            <!-- Profil Singkat & Tombol Logout -->
             <div class="flex items-center justify-between p-2 bg-black/10 rounded-xl">
                 <div class="flex items-center space-x-3">
                     <div class="w-9 h-9 rounded-lg bg-emerald-600 flex items-center justify-center font-bold text-white shadow-inner">MG</div>
@@ -177,25 +133,25 @@
             </div>
         </div>
     </aside>
-    <!-- Background Transparan Saat Sidebar Mobile Terbuka -->
     <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 z-40 bg-black/50 hidden lg:hidden backdrop-blur-xs"></div>
 
-    <!-- BAGIAN C: PANEL UTAMA / KONTEN UTAMA (KANAN) -->
+    <!-- ============================================================= -->
+    <!-- BAGIAN C: PANEL UTAMA / KONTEN                                 -->
+    <!-- ============================================================= -->
     <div class="flex-1 min-w-0 lg:pl-64 flex flex-col min-h-screen">
-        
-        <!-- HEADER ATAS (Judul Halaman, Switch Demo, Status Koneksi) -->
+
+        <!-- HEADER -->
         <header class="sticky top-0 z-30 bg-white/80 dark:bg-[#1E293B]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-300 px-4 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div class="flex items-center space-x-4">
-                <!-- Tombol Menu Hamburger untuk Ponsel -->
                 <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"><i class="fa-solid fa-bars text-xl"></i></button>
                 <div>
                     <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400">Monitoring System</h2>
                     <h1 id="page-title" class="text-xl font-bold text-slate-800 dark:text-white">Dashboard Utama</h1>
                 </div>
             </div>
-            
+
             <div class="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
-                <!-- Switch Toggle Mode Demo -->
+                <!-- Switch Mode Demo -->
                 <div class="flex items-center space-x-2 bg-slate-100 dark:bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700/60">
                     <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Mode Demo</span>
                     <label class="relative inline-flex items-center cursor-pointer">
@@ -203,8 +159,8 @@
                         <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-600 peer-checked:bg-amber-500"></div>
                     </label>
                 </div>
-                
-                <!-- Badge Indikator Sinyal & Koneksi Realtime -->
+
+                <!-- Status Koneksi -->
                 <div class="flex items-center space-x-4">
                     <div id="connection-container" class="flex items-center space-x-2 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800/60 shadow-xs transition-colors duration-300">
                         <span class="relative flex h-2 w-2" id="ping-indicator">
@@ -214,20 +170,17 @@
                         <i id="connection-icon" class="fa-solid fa-wifi text-emerald-600 dark:text-emerald-400 text-xs"></i>
                         <span id="status-text" class="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">REALTIME LIVE</span>
                     </div>
-                    
-                    <!-- Keterangan Waktu Pembaruan Terakhir -->
                     <div class="hidden md:block text-right">
                         <p class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Update Terakhir</p>
                         <p id="last-update" class="text-xs font-medium text-slate-600 dark:text-slate-300">Memuat...</p>
                     </div>
-                    
-                    <!-- Lonceng Notifikasi Dropdown -->
+
+                    <!-- Notifikasi -->
                     <div class="relative">
                         <button onclick="toggleNotificationPanel()" class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 relative">
                             <i class="fa-regular fa-bell text-lg"></i>
-                            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                            <span id="notif-badge-dot" class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
                         </button>
-                        <!-- Isi Dropdown Notifikasi -->
                         <div id="notif-dropdown" class="absolute right-0 mt-2 w-80 bg-white dark:bg-darkCard rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 py-2 hidden z-50">
                             <div class="px-4 py-2 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                                 <span class="font-bold text-sm">Notifikasi Terbaru</span>
@@ -240,15 +193,13 @@
             </div>
         </header>
 
-        <!-- KONTEN HALAMAN UTAMA -->
+        <!-- KONTEN UTAMA -->
         <main class="flex-1 p-4 lg:p-8 space-y-6">
-            
-            <!-- TAB 1: KONTEN DASHBOARD UTAMA -->
+
+            <!-- TAB 1: DASHBOARD -->
             <div id="tab-dashboard" class="space-y-6">
-                <!-- 4 KARTU PRESENTASI DATA STATISTIK -->
+                <!-- Kartu Statistik -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-                    
-                    <!-- Kartu 1: Total Deteksi Hama -->
                     <div class="bg-white dark:bg-darkCard p-5 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80 hover:shadow-md transition-all-300 flex items-center justify-between group">
                         <div class="space-y-2">
                             <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Deteksi Hari Ini</p>
@@ -259,41 +210,37 @@
                         </div>
                         <div class="p-4 bg-blue-500/10 text-blue-500 dark:text-blue-400 rounded-2xl group-hover:scale-110 transition-transform duration-300"><i class="fa-solid fa-bullseye text-2xl"></i></div>
                     </div>
-                    
-                    <!-- Kartu 2: Status Sensor Gerak PIR -->
+
                     <div id="card-pir" class="bg-white dark:bg-darkCard p-5 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80 hover:shadow-md transition-all-300 flex items-center justify-between group">
                         <div class="space-y-2">
                             <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status Sensor PIR</p>
-                            <span id="stat-pir-status" class="text-lg font-bold text-slate-500 transition-all duration-300">Siaga</span>
+                            <span id="stat-pir-status" class="text-lg font-bold text-slate-500">Siaga</span>
                         </div>
                         <div id="icon-pir-container" class="p-4 bg-emerald-500/10 text-lightAccent dark:text-darkAccent rounded-2xl transition-all duration-300"><i id="icon-pir" class="fa-solid fa-person-walking-dashed-line text-2xl"></i></div>
                     </div>
-                    
-                    <!-- Kartu 3: Status Daya Pagar Kejut Listrik -->
-                    <div id="card-pagar" class="bg-white dark:bg-darkCard p-5 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80 hover:shadow-md transition-all-300 flex items-center justify-between group">
+
+                    <div id="card-speaker" class="bg-white dark:bg-darkCard p-5 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80 hover:shadow-md transition-all-300 flex items-center justify-between group">
                         <div class="space-y-2">
-                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sistem Kejut Listrik</p>
-                            <span id="stat-pagar" class="text-lg font-bold text-[#27AE60] dark:text-[#22C55E]">AKTIF</span>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status Speaker</p>
+                            <span id="stat-speaker" class="text-lg font-bold text-[#27AE60] dark:text-[#22C55E]">SIAGA</span>
                         </div>
-                        <div id="icon-pagar-container" class="p-4 bg-emerald-500/10 text-lightAccent dark:text-darkAccent rounded-2xl"><i class="fa-solid fa-bolt-lightning text-2xl animate-pulse"></i></div>
+                        <div id="icon-speaker-container" class="p-4 bg-emerald-500/10 text-lightAccent dark:text-darkAccent rounded-2xl"><i id="icon-speaker" class="fa-solid fa-volume-high text-2xl"></i></div>
                     </div>
-                    
-                    <!-- Kartu 4: Suhu IoT & Uptime Daya Solar Panel -->
+
                     <div class="bg-white dark:bg-darkCard p-5 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80 hover:shadow-md transition-all-300 flex items-center justify-between group">
                         <div class="space-y-2">
-                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Suhu / Uptime</p>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Jarak Deteksi PIR</p>
                             <div class="flex items-baseline space-x-1">
-                                <span id="stat-suhu" class="text-lg font-bold text-slate-800 dark:text-white">32.5 °C</span>
-                                <span class="text-xs text-slate-400 font-normal">/ <span id="stat-uptime">99%</span></span>
+                                <span id="stat-jarak-pir" class="text-lg font-bold text-slate-800 dark:text-white">± 6 m</span>
+                                <span class="text-xs text-slate-400 font-normal">(HC-SR501)</span>
                             </div>
                         </div>
-                        <div class="p-4 bg-amber-500/10 text-amber-500 rounded-2xl"><i class="fa-solid fa-temperature-half text-2xl"></i></div>
+                        <div class="p-4 bg-amber-500/10 text-amber-500 rounded-2xl"><i class="fa-solid fa-satellite-dish text-2xl"></i></div>
                     </div>
                 </div>
 
-                <!-- PANEL GRAFIK & WIDGET EMERGENCY PERINGATAN -->
+                <!-- Grafik & Peringatan -->
                 <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                    <!-- Area Grafik Tren (Kiri) -->
                     <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80 xl:col-span-2">
                         <div class="flex items-center justify-between mb-4">
                             <div>
@@ -303,26 +250,25 @@
                         </div>
                         <div class="relative h-[280px] w-full"><canvas id="detectionChart"></canvas></div>
                     </div>
-                    
-                    <!-- Area Log Peringatan Kritis & Picu Listrik Darurat (Kanan) -->
+
                     <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80 flex flex-col justify-between">
                         <div>
                             <div class="flex items-center justify-between mb-4">
                                 <h3 class="text-base font-bold text-slate-800 dark:text-white">Peringatan Terbaru</h3>
                                 <span class="px-2 py-1 text-[10px] bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400 font-bold rounded-md uppercase tracking-wider animate-pulse">Critical</span>
                             </div>
-                            <!-- List Notifikasi Merah Pulsing -->
                             <div id="alert-list" class="space-y-3 max-h-[250px] overflow-y-auto pr-1"></div>
                         </div>
-                        <div class="pt-4 border-t border-slate-100 dark:border-slate-800/80 mt-4">
-                            <button onclick="triggerManualShock()" class="w-full py-3 bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-red-600/30 flex items-center justify-center space-x-2">
-                                <i class="fa-solid fa-bolt"></i><span>PICU KEJUT MANUAL</span>
+                        <div class="pt-4 border-t border-slate-100 dark:border-slate-800/80 mt-4 space-y-2">
+                            <p class="text-[10px] text-slate-400 text-center">Memutar suara frekuensi tinggi 15–22 kHz selama 10 detik</p>
+                            <button id="btn-sound-repeller" onclick="triggerSoundRepeller()" class="w-full py-3 bg-orange-600 hover:bg-orange-700 active:scale-[0.98] text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-orange-600/30 flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-volume-high"></i><span>PICU SUARA PENGUSIR</span>
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- TABEL LOG AKURAT TERBARU -->
+                <!-- Tabel Log -->
                 <div class="bg-white dark:bg-darkCard rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80 overflow-hidden">
                     <div class="px-6 py-5 border-b border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
@@ -340,7 +286,7 @@
                                     <th class="py-4 px-6">No</th>
                                     <th class="py-4 px-6">Waktu</th>
                                     <th class="py-4 px-6">Sensor PIR</th>
-                                    <th class="py-4 px-6">Pagar</th>
+                                    <th class="py-4 px-6">Speaker</th>
                                     <th class="py-4 px-6">Keterangan</th>
                                 </tr>
                             </thead>
@@ -350,7 +296,7 @@
                 </div>
             </div>
 
-            <!-- TAB 2: RIWAYAT LOG LENGKAP -->
+            <!-- TAB 2: LOG LENGKAP -->
             <div id="tab-logs" class="space-y-6 hidden">
                 <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -370,7 +316,7 @@
                                     <th class="py-4 px-6">No</th>
                                     <th class="py-4 px-6">Waktu</th>
                                     <th class="py-4 px-6">Sensor PIR</th>
-                                    <th class="py-4 px-6">Pagar</th>
+                                    <th class="py-4 px-6">Speaker</th>
                                     <th class="py-4 px-6">Keterangan</th>
                                 </tr>
                             </thead>
@@ -380,15 +326,13 @@
                 </div>
             </div>
 
-            <!-- TAB 3: SIMULATOR & HARDWARE DIASBOARD -->
+            <!-- TAB 3: SENSOR & SIMULATOR -->
             <div id="tab-sensors" class="space-y-6 hidden">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Sisi Kiri: Slider & Switch Simulasi Virtual -->
                     <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80">
                         <h3 class="text-base font-bold mb-2">Simulasi Keadaan Lingkungan</h3>
                         <p class="text-xs text-slate-400 mb-6">Uji respon operasional sistem MonkeyGuard secara virtual</p>
                         <div class="space-y-4">
-                            <!-- Toggle PIR -->
                             <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
                                 <div>
                                     <p class="text-sm font-semibold">Simulasikan Deteksi PIR</p>
@@ -399,46 +343,43 @@
                                     <div class="w-11 h-6 bg-slate-200 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                                 </label>
                             </div>
-                            <!-- Toggle Power Pagar -->
                             <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
                                 <div>
-                                    <p class="text-sm font-semibold">Status Daya Pagar Listrik</p>
-                                    <p class="text-[11px] text-slate-400">Aktifkan / putuskan aliran arus pagar kejut</p>
+                                    <p class="text-sm font-semibold">Simulasi Suara Pengusir</p>
+                                    <p class="text-[11px] text-slate-400">Aktifkan untuk mensimulasikan DFPlayer Mini bunyi</p>
                                 </div>
                                 <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="sim-pagar" onchange="onSimulationChange()" checked class="sr-only peer">
-                                    <div class="w-11 h-6 bg-slate-200 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                    <input type="checkbox" id="sim-speaker" onchange="onSimulationChange()" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-200 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
                                 </label>
                             </div>
-                            <!-- Slider Suhu -->
                             <div class="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl space-y-2">
                                 <div class="flex justify-between items-center">
-                                    <p class="text-sm font-semibold">Simulasi Suhu Perangkat</p>
-                                    <span id="suhu-val" class="text-xs font-bold text-slate-500">32.5 °C</span>
+                                    <p class="text-sm font-semibold">Simulasi Jarak Objek Terdeteksi</p>
+                                    <span id="jarak-val" class="text-xs font-bold text-slate-500">3.0 m</span>
                                 </div>
-                                <input type="range" id="sim-suhu" min="15" max="60" step="0.5" value="32.5" oninput="updateSuhuLabel(this.value)" onchange="onSimulationChange()" class="w-full accent-emerald-500">
+                                <input type="range" id="sim-jarak" min="0" max="6" step="0.5" value="3" oninput="updateJarakLabel(this.value)" onchange="onSimulationChange()" class="w-full accent-emerald-500">
+                                <p class="text-[10px] text-slate-400">Jangkauan maksimum sensor PIR HC-SR501: 6 meter</p>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Sisi Kanan: Status Kesehatan Fisik Modul ESP32 -->
+
                     <div class="bg-white dark:bg-darkCard p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 space-y-4">
                         <h3 class="text-base font-bold">Kondisi Fisik Modul IoT</h3>
-                        <p class="text-xs text-slate-400">Kondisi fisik hardware modul IoT MonkeyGuard</p>
+                        <p class="text-xs text-slate-400">Status hardware ESP32, DFPlayer Mini & Speaker</p>
                         <div class="space-y-3 text-xs">
-                            <div class="flex justify-between items-center p-3 border-b border-slate-100 dark:border-slate-800/50"><span class="text-slate-400">Sinyal Wi-Fi (RSSI)</span><span class="font-bold text-emerald-500">-55 dBm (Sangat Baik)</span></div>
-                            <div class="flex justify-between items-center p-3 border-b border-slate-100 dark:border-slate-800/50"><span class="text-slate-400">Tegangan Solar Panel</span><span class="font-bold text-slate-700 dark:text-slate-300">12.6V (Mengisi Daya)</span></div>
-                            <div class="flex justify-between items-center p-3 border-b border-slate-100 dark:border-slate-800/50"><span class="text-slate-400">Arus Pagar Kejut</span><span class="font-bold text-slate-700 dark:text-slate-300">1.2 A (Normal)</span></div>
-                            <div class="flex justify-between items-center p-3"><span class="text-slate-400">Suhu Chipset ESP32</span><span class="font-bold text-slate-700 dark:text-slate-300"><span class="chip-suhu-bind">32.5</span> °C</span></div>
+                            <div class="flex justify-between items-center p-3 border-b border-slate-100 dark:border-slate-800/50"><span class="text-slate-400">Sinyal Wi-Fi (RSSI)</span><span id="stat-rssi" class="font-bold text-emerald-500">-55 dBm (Sangat Baik)</span></div>
+                            <div class="flex justify-between items-center p-3 border-b border-slate-100 dark:border-slate-800/50"><span class="text-slate-400">Modul Audio</span><span class="font-bold text-emerald-500">DFPlayer Mini (Aktif)</span></div>
+                            <div class="flex justify-between items-center p-3 border-b border-slate-100 dark:border-slate-800/50"><span class="text-slate-400">Speaker</span><span class="font-bold text-slate-700 dark:text-slate-300">Full Range 3W (Terpasang)</span></div>
+                            <div class="flex justify-between items-center p-3"><span class="text-slate-400">Jarak Deteksi PIR</span><span class="font-bold text-slate-700 dark:text-slate-300">± 6 meter (HC-SR501)</span></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB 4: PANEL INTEGRASI API (FIREBASE & TELEGRAM) -->
+            <!-- TAB 4: INTEGRASI -->
             <div id="tab-settings" class="space-y-6 hidden">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Konfigurasi Database Firebase -->
                     <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80">
                         <div class="flex items-center space-x-3 mb-4">
                             <div class="p-2 bg-amber-500/10 text-amber-500 rounded-lg"><i class="fa-solid fa-database text-lg"></i></div>
@@ -463,14 +404,13 @@
                             <button onclick="saveFirebaseSettings()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-600/20">Simpan Kredensial Firebase</button>
                         </div>
                     </div>
-                    
-                    <!-- Konfigurasi Bot Telegram -->
+
                     <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80">
                         <div class="flex items-center space-x-3 mb-4">
                             <div class="p-2 bg-blue-500/10 text-blue-500 rounded-lg"><i class="fa-solid fa-paper-plane text-lg"></i></div>
                             <div>
                                 <h3 class="text-base font-bold">Bot Telegram Notifikasi</h3>
-                                <p class="text-xs text-slate-400">Kirim peringatan deteksi langsung ke Telegram Anda</p>
+                                <p class="text-xs text-slate-400">Kirim peringatan deteksi ke Kepala Tani & Anggota Tani</p>
                             </div>
                         </div>
                         <div class="space-y-4">
@@ -479,535 +419,48 @@
                                 <input type="password" id="tele-token" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Chat ID Tujuan</label>
-                                <input type="text" id="tele-chatid" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Chat ID Kepala Tani</label>
+                                <input type="text" id="tele-chatid" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Contoh: 123456789">
+                                <p class="text-[10px] text-slate-400 mt-1">Penerima utama notifikasi, wajib diisi</p>
                             </div>
                             <button onclick="saveTelegramSettings()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-600/20 mb-2">Simpan Pengaturan</button>
                             <button onclick="sendTestTelegram()" class="w-full py-3 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all"><i class="fa-regular fa-paper-plane mr-1"></i> Kirim Pesan Uji Coba</button>
+
+                            <!-- ====================================================== -->
+                            <!-- RUANG PENGEMBANGAN: Daftar Anggota Tani Penerima Notifikasi -->
+                            <!-- Fitur ini disiapkan sebagai kerangka untuk pengembangan  -->
+                            <!-- selanjutnya (broadcast notifikasi ke banyak petani).      -->
+                            <!-- Saat ini data tersimpan di localStorage & Firebase, namun  -->
+                            <!-- pengiriman pesan ke seluruh anggota tani perlu diaktifkan  -->
+                            <!-- lebih lanjut sesuai kebutuhan penelitian.                  -->
+                            <!-- ====================================================== -->
+                            <div class="pt-4 border-t border-dashed border-slate-200 dark:border-slate-700 mt-2">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Daftar Anggota Tani</label>
+                                    <span class="px-2 py-0.5 text-[9px] bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-bold rounded-md uppercase tracking-wider">Pengembangan</span>
+                                </div>
+                                <p class="text-[10px] text-slate-400 mb-3">Tambahkan Chat ID anggota tani lain agar ikut menerima notifikasi deteksi monyet</p>
+
+                                <div class="flex space-x-2 mb-3">
+                                    <input type="text" id="tele-member-input" placeholder="Chat ID anggota tani" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                    <button onclick="addTaniMember()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all"><i class="fa-solid fa-plus"></i></button>
+                                </div>
+
+                                <div id="tele-member-list" class="space-y-2 max-h-40 overflow-y-auto"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
-        
-        <!-- FOOTER HALAMAN -->
+
         <footer class="mt-auto py-4 px-8 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400">&copy; 2026 MonkeyGuard. Hak Cipta Dilindungi Undang-Undang.</footer>
     </div>
 
-    <!-- PANEL NOTIFIKASI TOAST (MELAYANG DI SUDUT KANAN BAWAH) -->
+    <!-- TOAST NOTIFIKASI -->
     <div id="toast-box" class="fixed bottom-5 right-5 z-[999] px-5 py-3 rounded-xl bg-slate-900 text-white text-xs font-medium shadow-2xl flex items-center space-x-2 transform translate-y-20 opacity-0 transition-all duration-300"><span id="toast-message"></span></div>
 
-    <!-- ================================================================= -->
-    <!-- 4. LOGIKA JAVASCRIPT (SISTEM & FUNGSIONAL)                        -->
-    <!-- ================================================================= -->
-    <script>
-        // -------------------------------------------------------------
-        // A. JS HELPER & GLOBAL STATE (Penyimpan Data Utama Aplikasi)
-        // -------------------------------------------------------------
-        // Fungsi singkat untuk memilih ID element HTML (mirip jQuery $)
-        const $ = id => document.getElementById(id);
-        const $$ = cl => document.querySelectorAll(cl);
-
-        // State global untuk menampung status halaman saat ini
-        let currentTab = 'dashboard';
-        let isDarkMode = false;
-        let logsData = [];
-        let detectionChart = null;
-        let isDemoMode = true; // Status awal diset ke mode demo (offline)
-        
-        // Menampung statistik deteksi monyet tiap jam (24 jam)
-        let hourlyData = Array(24).fill(0);
-        
-        // Objek konfigurasi integrasi
-        let fbConfig = { apiKey: '', databaseURL: '', projectId: '' };
-        let teleConfig = { token: '', chatId: '' };
-        let dbRef = null;
-
-        // -------------------------------------------------------------
-        // B. SISTEM LOGIN & LOGOUT (Keamanan Dashboard)
-        // -------------------------------------------------------------
-        // Fungsi memantau status login saat halaman dibuka
-        function checkAuthStatus() {
-            const loggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
-            $('login-overlay').classList.toggle('hidden', loggedIn);
-        }
-
-        // Memproses input login
-        function handleLogin(e) {
-            e.preventDefault();
-            const usernameInput = $('login-username').value.trim();
-            const passwordInput = $('login-password').value.trim();
-
-            if (usernameInput === 'admin' && passwordInput === 'admin123') {
-                sessionStorage.setItem('isLoggedIn', 'true');
-                showToast("Selamat datang kembali, Admin!", "success");
-                checkAuthStatus();
-            } else {
-                showToast("Username atau password salah!", "error");
-            }
-        }
-
-        // Memproses keluar akun
-        function handleLogout() {
-            sessionStorage.removeItem('isLoggedIn');
-            showToast("Keluar berhasil.", "info");
-            $('login-overlay').classList.remove('hidden');
-            $('login-username').value = $('login-password').value = '';
-        }
-
-        // -------------------------------------------------------------
-        // C. TEMA & TAMPILAN (Mode Gelap / Terang)
-        // -------------------------------------------------------------
-        function initTheme() {
-            // Membaca preferensi tema pengguna sebelumnya dari memori lokal (localStorage)
-            const savedTheme = localStorage.theme;
-            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            setDarkMode(savedTheme === 'dark' || (!savedTheme && systemPrefersDark));
-        }
-
-        function toggleDarkMode() { 
-            setDarkMode(!isDarkMode); 
-        }
-
-        function setDarkMode(dark) {
-            isDarkMode = dark;
-            document.documentElement.classList.toggle('dark', dark);
-            localStorage.theme = dark ? 'dark' : 'light';
-            $('theme-text').innerText = dark ? "Gelap" : "Terang";
-            $('theme-icon-light').classList.toggle('hidden', dark);
-            $('theme-icon-dark').classList.toggle('hidden', !dark);
-            if (detectionChart) updateChartTheme();
-        }
-
-        // -------------------------------------------------------------
-        // D. NAVIGASI TABS & SIDEBAR
-        // -------------------------------------------------------------
-        function toggleSidebar() {
-            const open = !$('sidebar').classList.contains('-translate-x-full');
-            $('sidebar').classList.toggle('-translate-x-full', open);
-            $('sidebar-overlay').classList.toggle('hidden', open);
-        }
-
-        // Pindah tab halaman secara dinamis (Single Page Application)
-        function switchTab(tabId) {
-            // Sembunyikan tab lama & hilangkan sorot menu
-            $(`tab-${currentTab}`).classList.add('hidden');
-            $(`menu-${currentTab}`).className = "nav-item flex items-center space-x-3.5 px-4 py-3 rounded-xl transition-all-300 text-slate-300 hover:bg-white/5 hover:text-white";
-            
-            // Tampilkan tab baru & sorot menunya
-            $(`tab-${tabId}`).classList.remove('hidden');
-            $(`menu-${tabId}`).className = "nav-item flex items-center space-x-3.5 px-4 py-3 rounded-xl transition-all-300 bg-white/10 text-white font-medium";
-            
-            // Perbarui judul halaman di header atas
-            const titles = { 
-                dashboard: 'Dashboard Utama', 
-                logs: 'Catatan Aktivitas Lengkap', 
-                sensors: 'Simulasi & Status Sensor', 
-                settings: 'Konfigurasi Integrasi' 
-            };
-            $('page-title').innerText = titles[tabId];
-            currentTab = tabId;
-            
-            // Tutup sidebar jika dibuka di smartphone
-            if (window.innerWidth < 1024) toggleSidebar();
-        }
-
-        function toggleNotificationPanel() { 
-            $('notif-dropdown').classList.toggle('hidden'); 
-        }
-
-        // Menampilkan kotak notifikasi melayang di sudut layar
-        function showToast(msg, type = 'info') {
-            const toast = $('toast-box'), msgEl = $('toast-message');
-            msgEl.innerText = msg;
-            
-            // Variasi warna toast berdasarkan tipe pesan
-            toast.className = `fixed bottom-5 right-5 z-[999] px-5 py-3 rounded-xl text-white text-xs font-semibold shadow-2xl flex items-center space-x-2 transform transition-all duration-300 ${
-                type === 'error' ? 'bg-red-600' : type === 'success' ? 'bg-emerald-600' : 'bg-slate-900'
-            }`;
-            
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
-        }
-
-        // -------------------------------------------------------------
-        // E. GRAFIK DETEKSI (Pustaka Chart.js)
-        // -------------------------------------------------------------
-        function initChart() {
-            const ctx = $('detectionChart').getContext('2d');
-            detectionChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`),
-                    datasets: [{ 
-                        label: 'Deteksi', 
-                        data: hourlyData, 
-                        borderColor: '#22C55E', 
-                        backgroundColor: 'rgba(34, 197, 94, 0.1)', 
-                        borderWidth: 3, 
-                        fill: true, 
-                        tension: 0.4, 
-                        pointBackgroundColor: '#22C55E' 
-                    }]
-                },
-                options: {
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1, color: '#64748B' }, grid: { color: 'rgba(226, 232, 240, 0.8)' } },
-                        x: { ticks: { color: '#64748B' }, grid: { display: false } }
-                    }
-                }
-            });
-            updateChartTheme();
-        }
-
-        // Menyesuaikan warna garis & teks grafik saat tema berganti gelap/terang
-        function updateChartTheme() {
-            if (!detectionChart) return;
-            const darkClr = isDarkMode ? '#94A3B8' : '#64748B';
-            const gridClr = isDarkMode ? 'rgba(51, 65, 85, 0.3)' : 'rgba(226, 232, 240, 0.8)';
-            
-            detectionChart.options.scales.y.ticks.color = detectionChart.options.scales.x.ticks.color = darkClr;
-            detectionChart.options.scales.y.grid.color = gridClr;
-            detectionChart.data.datasets[0].borderColor = isDarkMode ? '#22C55E' : '#27AE60';
-            detectionChart.data.datasets[0].backgroundColor = isDarkMode ? 'rgba(34, 197, 94, 0.1)' : 'rgba(39, 174, 96, 0.1)';
-            detectionChart.update();
-        }
-
-        // -------------------------------------------------------------
-        // F. MANAJEMEN STATUS INTEGRASI KONEKSI (Indikator Badge)
-        // -------------------------------------------------------------
-        function updateConnectionStatusUI(status) {
-            const container = $('connection-container');
-            const text = $('status-text');
-            const icon = $('connection-icon');
-            const ping = $('ping-indicator');
-
-            if (status === 'live') {
-                container.className = "flex items-center space-x-2 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800/60 shadow-xs transition-all-300";
-                text.innerText = "REALTIME LIVE";
-                text.className = "text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider";
-                icon.className = "fa-solid fa-wifi text-emerald-600 dark:text-emerald-400 text-xs animate-pulse";
-                ping.classList.remove('hidden');
-            } else if (status === 'demo') {
-                container.className = "flex items-center space-x-2 bg-amber-50 dark:bg-amber-950/40 px-3 py-1.5 rounded-full border border-amber-200 dark:border-amber-800/60 shadow-xs transition-all-300";
-                text.innerText = "DEMO AKTIF";
-                text.className = "text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider";
-                icon.className = "fa-solid fa-laptop text-amber-600 dark:text-amber-400 text-xs";
-                ping.classList.add('hidden');
-            } else if (status === 'connecting') {
-                container.className = "flex items-center space-x-2 bg-blue-50 dark:bg-blue-950/40 px-3 py-1.5 rounded-full border border-blue-200 dark:border-blue-800/60 shadow-xs transition-all-300";
-                text.innerText = "MENYAMBUNG...";
-                text.className = "text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wider";
-                icon.className = "fa-solid fa-spinner text-blue-600 dark:text-blue-400 text-xs animate-spin";
-                ping.classList.add('hidden');
-            } else if (status === 'unconfigured') {
-                container.className = "flex items-center space-x-2 bg-rose-50 dark:bg-rose-950/40 px-3 py-1.5 rounded-full border border-rose-200 dark:border-rose-800/60 shadow-xs transition-all-300";
-                text.innerText = "CLOUD BELUM DISET";
-                text.className = "text-xs font-semibold text-rose-700 dark:text-rose-400 uppercase tracking-wider";
-                icon.className = "fa-solid fa-cloud-slash text-rose-600 dark:text-rose-400 text-xs";
-                ping.classList.add('hidden');
-            }
-        }
-
-        // Switch Mode Demo/Cloud Realtime
-        function toggleDemoMode() {
-            isDemoMode = $('demo-mode-toggle').checked;
-            if (isDemoMode) {
-                if (dbRef) dbRef.off(); // Putus listener Firebase
-                showToast("Mode Demo Aktif (Virtual / Offline)", "info");
-                setupLocalDummyData();
-            } else {
-                const savedFb = localStorage.getItem('fb_config');
-                if (savedFb) { 
-                    fbConfig = JSON.parse(savedFb); 
-                    if (fbConfig.apiKey && fbConfig.databaseURL && fbConfig.projectId) {
-                        updateConnectionStatusUI('connecting');
-                        initFirebase(); 
-                    } else {
-                        showToast("Kredensial Firebase tidak lengkap!", "error");
-                        updateConnectionStatusUI('unconfigured');
-                    }
-                } else {
-                    showToast("Harap set up Firebase di tab Integrasi!", "error");
-                    updateConnectionStatusUI('unconfigured');
-                }
-            }
-        }
-
-        // -------------------------------------------------------------
-        // G. STORAGE & DATA LOAD (Firebase & LocalStorage)
-        // -------------------------------------------------------------
-        function loadSavedCredentials() {
-            const savedFb = localStorage.getItem('fb_config');
-            const savedTele = localStorage.getItem('tele_config');
-            
-            // Set input pengaturan jika ada kredensial tersimpan
-            if (savedFb) {
-                fbConfig = JSON.parse(savedFb);
-                $('fb-apikey').value = fbConfig.apiKey || '';
-                $('fb-dburl').value = fbConfig.databaseURL || '';
-                $('fb-projectid').value = fbConfig.projectId || '';
-            }
-            if (savedTele) {
-                teleConfig = JSON.parse(savedTele);
-                $('tele-token').value = teleConfig.token || '';
-                $('tele-chatid').value = teleConfig.chatId || '';
-            }
-            
-            isDemoMode = $('demo-mode-toggle').checked;
-            if (isDemoMode) {
-                setupLocalDummyData();
-            } else if (savedFb && fbConfig.apiKey && fbConfig.databaseURL && fbConfig.projectId) {
-                initFirebase();
-            } else {
-                updateConnectionStatusUI('unconfigured');
-            }
-        }
-
-        function initFirebase() {
-            if (fbConfig.apiKey && fbConfig.databaseURL && fbConfig.projectId) {
-                try {
-                    // Hindari duplikasi inisiasi app Firebase
-                    if (firebase.apps.length === 0) firebase.initializeApp(fbConfig);
-                    dbRef = firebase.database().ref('monkeyguard');
-                    
-                    // Listener realtime cloud
-                    dbRef.on('value', snap => {
-                        const data = snap.val();
-                        if (data && !isDemoMode) applyRealtimeData(data);
-                    }, err => {
-                        showToast("Firebase Error: " + err.message, "error");
-                        updateConnectionStatusUI('unconfigured');
-                    });
-                    
-                    updateConnectionStatusUI('live');
-                    showToast("Terhubung ke Cloud Realtime!", "success");
-                } catch (e) { 
-                    showToast("Gagal memuat Firebase: " + e.message, "error"); 
-                    updateConnectionStatusUI('unconfigured');
-                }
-            }
-        }
-
-        // Memetakan data riil cloud ke element visual dashboard
-        function applyRealtimeData(data) {
-            animateStatChange('stat-total-deteksi', data.total_deteksi || 0);
-            updatePIRUI(data.pir_sensor);
-            updatePagarUI(data.pagar_kejut);
-            
-            const suhu = parseFloat(data.suhu || 32.5).toFixed(1);
-            $('stat-suhu').innerText = suhu + " °C";
-            $$('.chip-suhu-bind').forEach(el => el.innerText = suhu);
-            
-            if (data.logs) { 
-                logsData = Object.values(data.logs).reverse(); 
-                renderLogs(); 
-            }
-            
-            // Samakan isi simulator panel agar sinkron dengan status cloud
-            $('sim-pir').checked = data.pir_sensor;
-            $('sim-pagar').checked = data.pagar_kejut;
-            $('sim-suhu').value = data.suhu || 32.5;
-            $('suhu-val').innerText = suhu + " °C";
-            $('last-update').innerText = new Date().toLocaleTimeString('id-ID');
-        }
-
-        // Memuat dataset tiruan lokal apabila sistem berjalan offline
-        function setupLocalDummyData() {
-            updateConnectionStatusUI('demo');
-            hourlyData = [0,0,0,0,0,1,3,0,0,2,4,0,1,3,1,0,2,0,0,0,0,0,0,0];
-            if (detectionChart) { 
-                detectionChart.data.datasets[0].data = hourlyData; 
-                detectionChart.update(); 
-            }
-            logsData = [
-                { waktu: "09:30:15", pir: false, pagar: true, ket: "Kondisi kebun aman, pagar standby" },
-                { waktu: "11:12:45", pir: true, pagar: true, ket: "Monyet Terdeteksi - Shock Listrik Aktif" },
-                { waktu: "13:05:00", pir: false, pagar: true, ket: "Keadaan normal kembali" },
-                { waktu: "15:45:22", pir: true, pagar: true, ket: "Monyet Terdeteksi - Respon Cepat" }
-            ];
-            applyRealtimeData({ total_deteksi: 14, pir_sensor: false, pagar_kejut: true, suhu: 32.5, logs: logsData });
-        }
-
-        // -------------------------------------------------------------
-        // H. MANIPULASI ELEMENT UI (Dinamis / Animasi)
-        // -------------------------------------------------------------
-        // Animasi pembesaran & transisi warna angka statistik saat nilai berubah
-        function animateStatChange(id, val) {
-            const el = $(id);
-            if (parseInt(el.innerText) === val) return;
-            el.classList.add('scale-125', 'text-emerald-500');
-            setTimeout(() => { 
-                el.innerText = val; 
-                el.classList.remove('scale-125', 'text-emerald-500'); 
-            }, 250);
-        }
-
-        function updatePIRUI(detected) {
-            $('card-pir').classList.toggle('border-red-500', detected);
-            $('card-pir').classList.toggle('bg-red-50/10', detected);
-            $('card-pir').classList.toggle('animate-pulse-subtle', detected);
-            $('icon-pir-container').className = `p-4 rounded-2xl transition-all ${detected ? 'bg-red-500/20 text-red-500' : 'bg-emerald-500/10 text-emerald-500'}`;
-            $('stat-pir-status').innerText = detected ? "Monyet Terdeteksi!" : "Siaga";
-            $('stat-pir-status').className = detected ? "text-sm font-extrabold text-red-500" : "text-lg font-bold text-slate-500 dark:text-slate-400";
-            $('icon-pir').className = detected ? "fa-solid fa-triangle-exclamation text-2xl" : "fa-solid fa-person-walking-dashed-line text-2xl";
-        }
-
-        function updatePagarUI(active) {
-            $('stat-pagar').innerText = active ? "AKTIF" : "MATI";
-            $('stat-pagar').className = `text-lg font-bold ${active ? 'text-emerald-500' : 'text-slate-400'}`;
-            $('icon-pagar-container').className = `p-4 rounded-2xl ${active ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-500/10 text-slate-400'}`;
-        }
-
-        // Memperbarui list log data & panel peringatan secara dinamis
-        function renderLogs() {
-            let rowsHtml = '', alertHtml = '', notifDropdownHtml = '';
-            logsData.forEach((log, idx) => {
-                const pirBdg = log.pir ? `<span class="px-2 py-0.5 bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-extrabold rounded-md text-[10px]">TERDETEKSI</span>` : `<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-md text-[10px]">Aman</span>`;
-                const pagarBdg = log.pagar ? `<span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-extrabold rounded-md text-[10px]">KEJUT ON</span>` : `<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-md text-[10px]">OFF</span>`;
-                
-                rowsHtml += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors"><td class="py-4 px-6 font-bold text-slate-400">${idx+1}</td><td class="py-4 px-6 font-medium">${log.waktu}</td><td class="py-4 px-6">${pirBdg}</td><td class="py-4 px-6">${pagarBdg}</td><td class="py-4 px-6">${log.ket}</td></tr>`;
-
-                if (log.pir) {
-                    alertHtml += `<div class="p-3 bg-red-500/10 border-l-4 border-red-500 rounded-r-xl flex space-x-3 items-start animate-pulse-subtle"><div class="text-red-500 mt-1"><i class="fa-solid fa-triangle-exclamation"></i></div><div class="flex-1"><p class="text-xs font-bold text-slate-800 dark:text-slate-100">MONYET TERDETEKSI</p><p class="text-[10px] text-slate-500">${log.ket}</p><span class="text-[9px] bg-red-500 text-white font-bold px-1.5 py-0.5 rounded-full mt-1 inline-block">${log.pagar ? 'KEJUT AKTIF' : 'STANDBY'}</span></div><span class="text-[9px] font-semibold text-slate-400">${log.waktu}</span></div>`;
-                    notifDropdownHtml += `<div class="p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 flex space-x-2"><div class="w-2 h-2 rounded-full bg-red-500 mt-1.5 shrink-0"></div><div><p class="text-xs font-bold text-slate-700 dark:text-slate-200">Deteksi Baru!</p><p class="text-[10px] text-slate-400">${log.waktu} - ${log.ket}</p></div></div>`;
-                }
-            });
-
-            $('log-table-body').innerHTML = $('full-log-table-body').innerHTML = rowsHtml || '<tr><td colspan="5" class="py-6 text-center">Belum ada aktivitas terekam</td></tr>';
-            $('alert-list').innerHTML = alertHtml || `<div class="p-6 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-slate-400"><i class="fa-solid fa-circle-check text-2xl text-emerald-500 mb-2"></i><p class="text-xs font-semibold">Kebun Sangat Aman</p></div>`;
-            $('notif-list-dropdown').innerHTML = notifDropdownHtml || `<div class="py-6 text-center text-xs text-slate-400">Tidak ada notifikasi baru</div>`;
-        }
-
-        // -------------------------------------------------------------
-        // I. AKSI SIMULASI & UTILITY EVENT HANDLERS
-        // -------------------------------------------------------------
-        function updateSuhuLabel(val) { 
-            $('suhu-val').innerText = parseFloat(val).toFixed(1) + " °C"; 
-        }
-
-        // Pemrosesan ketika status switch simulasi PIR / Pagar Kejut berubah
-        function onSimulationChange() {
-            const pir = $('sim-pir').checked;
-            const pagar = $('sim-pagar').checked;
-            const suhu = parseFloat($('sim-suhu').value);
-            
-            if (!isDemoMode && dbRef) {
-                dbRef.update({ pir_sensor: pir, pagar_kejut: pagar, suhu: suhu });
-                if (pir) {
-                    const t = new Date().toLocaleTimeString('id-ID');
-                    dbRef.child('logs').push().set({ waktu: t, pir: true, pagar: pagar, ket: "Terdeteksi via Simulasi Cloud" });
-                    dbRef.child('total_deteksi').transaction(c => (c || 0) + 1);
-                    sendTelegramAlert("⚠️ *MONYET TERDETEKSI (CLOUD)* pada " + t);
-                }
-            } else {
-                // Proses lokal (Mode Demo)
-                const t = new Date().toLocaleTimeString('id-ID');
-                let det = parseInt($('stat-total-deteksi').innerText);
-                if (pir) {
-                    det += 1;
-                    logsData.unshift({ waktu: t, pir: true, pagar: pagar, ket: "Deteksi Pergerakan Hama (Demo)" });
-                    hourlyData[new Date().getHours()] += 1;
-                    if (detectionChart) { 
-                        detectionChart.data.datasets[0].data = hourlyData; 
-                        detectionChart.update(); 
-                    }
-                    sendTelegramAlert("⚠️ *PERINGATAN DETEKSI MONYET (DEMO)* pada " + t);
-                }
-                applyRealtimeData({ total_deteksi: det, pir_sensor: pir, pagar_kejut: pagar, suhu: suhu, logs: logsData });
-            }
-        }
-
-        // Picu kejut listrik darurat secara paksa (override manual)
-        function triggerManualShock() {
-            showToast("⚡ Memasang kejut listrik darurat...", "error");
-            const t = new Date().toLocaleTimeString('id-ID');
-            if (!isDemoMode && dbRef) {
-                dbRef.update({ pagar_kejut: true });
-                dbRef.child('logs').push().set({ waktu: t, pir: false, pagar: true, ket: "Kejut manual oleh Admin" });
-            } else {
-                logsData.unshift({ waktu: t, pir: false, pagar: true, ket: "Kejut manual oleh Admin (Demo)" });
-                applyRealtimeData({ total_deteksi: parseInt($('stat-total-deteksi').innerText), pir_sensor: false, pagar_kejut: true, suhu: parseFloat($('sim-suhu').value), logs: logsData });
-            }
-        }
-
-        function clearAllLogs() {
-            if (confirm("Hapus seluruh catatan log aktivitas?")) {
-                if (!isDemoMode && dbRef) { 
-                    dbRef.child('logs').remove(); 
-                    dbRef.update({ total_deteksi: 0 }); 
-                } else { 
-                    logsData = []; 
-                    applyRealtimeData({ total_deteksi: 0, pir_sensor: false, pagar_kejut: true, suhu: 32.5, logs: [] }); 
-                }
-                showToast("Log berhasil dibersihkan", "success");
-            }
-        }
-
-        // Ekspor data log kejadian saat ini ke file spreadsheet (CSV)
-        function exportLogs() {
-            if (logsData.length === 0) return showToast("Log masih kosong!", "error");
-            let csv = "data:text/csv;charset=utf-8,No,Waktu,PIR,Pagar,Keterangan\n";
-            logsData.forEach((l, i) => csv += `${i+1},${l.waktu},${l.pir?'PIR':'AMAN'},${l.pagar?'ON':'OFF'},"${l.ket}"\n`);
-            
-            const link = document.createElement("a");
-            link.setAttribute("href", encodeURI(csv));
-            link.setAttribute("download", `monkeyguard_logs_${Date.now()}.csv`);
-            document.body.appendChild(link); 
-            link.click(); 
-            document.body.removeChild(link);
-            showToast("CSV Berhasil diunduh!", "success");
-        }
-
-        function clearNotifications() { 
-            showToast("Notifikasi dibersihkan", "info"); 
-        }
-
-        // -------------------------------------------------------------
-        // J. INTEGRASI KREDENSIAL CLOUD
-        // -------------------------------------------------------------
-        function saveFirebaseSettings() {
-            fbConfig = { apiKey: $('fb-apikey').value, databaseURL: $('fb-dburl').value, projectId: $('fb-projectid').value };
-            localStorage.setItem('fb_config', JSON.stringify(fbConfig));
-            showToast("Kredensial Firebase Disimpan!", "success");
-            $('demo-mode-toggle').checked = false;
-            setTimeout(() => window.location.reload(), 1000);
-        }
-
-        function saveTelegramSettings() {
-            teleConfig = { token: $('tele-token').value, chatId: $('tele-chatid').value };
-            localStorage.setItem('tele_config', JSON.stringify(teleConfig));
-            showToast("Bot Telegram Terkonfigurasi!", "success");
-        }
-
-        // Pengiriman pesan asli via API HTTP Bot Telegram
-        function sendTelegramAlert(text) {
-            if (!teleConfig.token || !teleConfig.chatId) return;
-            fetch(`https://api.telegram.org/bot${teleConfig.token}/sendMessage`, {
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: teleConfig.chatId, text: text, parse_mode: 'Markdown' })
-            }).catch(e => console.error(e));
-        }
-
-        function sendTestTelegram() {
-            if (!teleConfig.token || !teleConfig.chatId) return showToast("Data Telegram Belum Lengkap!", "error");
-            showToast("Mengirim pesan uji coba...");
-            sendTelegramAlert("🔔 *Koneksi Sukses!*\nSistem peringatan MonkeyGuard telah aktif.");
-        }
-
-        // -------------------------------------------------------------
-        // K. METODE STARTUP (Dijalankan Saat Browser Selesai Load Halaman)
-        // -------------------------------------------------------------
-        window.onload = function() {
-            checkAuthStatus();      // Cek apakah user sudah masuk/belum
-            initTheme();            // Cek & muat tema tampilan (Gelap/Terang)
-            initChart();            // Buat grafik garis statistik
-            loadSavedCredentials(); // Cari kredensial Firebase/Telegram yang tersimpan
-        };
-    </script>
+    <!-- JavaScript Eksternal -->
+    <script src="script.js"></script>
 </body>
 </html>
