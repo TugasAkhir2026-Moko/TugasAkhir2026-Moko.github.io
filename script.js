@@ -509,34 +509,30 @@ function onSimulationChange() {
 
 // -------------------------------------------------------------
 // PENGUSIR HAMA - Trigger Firebase ke ESP32 + DFPlayer Mini
-// Suara TIDAK diputar di browser. Semua suara diputar oleh
-// DFPlayer Mini yang terhubung langsung ke ESP32 di lapangan.
-// Dashboard hanya mengirim perintah via Firebase.
+// Sekali klik akan kirim perintah play, lalu otomatis reset setelah beberapa detik.
 // -------------------------------------------------------------
 let soundRepellerActive = false;
+let soundRepellerTimer = null;
 
 function triggerSoundRepeller() {
-    if (soundRepellerActive) {
-        stopSoundRepeller();
-        return;
-    }
+    if (soundRepellerActive) return;
 
     soundRepellerActive = true;
     const btn = $('btn-sound-repeller');
-    btn.innerHTML = `<i class="fa-solid fa-volume-xmark"></i><span>HENTIKAN SUARA</span>`;
-    btn.classList.remove('bg-orange-600', 'hover:bg-orange-700', 'shadow-orange-600/30');
-    btn.classList.add('bg-slate-700', 'hover:bg-slate-800', 'shadow-slate-700/30', 'animate-pulse');
+    const originalHtml = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>MENGIRIM...</span>`;
 
     showToast("🔊 Perintah suara dikirim ke ESP32!", "success");
 
     const t = new Date().toLocaleTimeString('id-ID');
+
     if (!isDemoMode && dbRef) {
-        // Kirim perintah ke Firebase → ESP32 baca → DFPlayer Mini bunyi
         dbRef.update({ play_sound: true });
-        dbRef.child('logs').push().set({ waktu: t, pir: false, pagar: true, ket: "Suara pengusir diaktifkan manual oleh Admin" });
+        dbRef.child('logs').push().set({ waktu: t, pir: false, pagar: true, ket: "Suara pengusir dipicu manual oleh Admin" });
     } else {
-        // Mode demo: hanya update UI & log, tidak ada suara
-        logsData.unshift({ waktu: t, pir: false, pagar: true, ket: "Suara pengusir diaktifkan (Demo - tidak ada suara)" });
+        logsData.unshift({ waktu: t, pir: false, pagar: true, ket: "Suara pengusir dipicu (Demo - tidak ada suara)" });
         applyRealtimeData({
             total_deteksi: parseInt($('stat-total-deteksi').innerText),
             pir_sensor: false,
@@ -546,22 +542,27 @@ function triggerSoundRepeller() {
         });
     }
 
-    // Auto reset tombol setelah 10 detik
-    setTimeout(() => {
-        if (soundRepellerActive) stopSoundRepeller();
-    }, 10000);
+    clearTimeout(soundRepellerTimer);
+    soundRepellerTimer = setTimeout(() => {
+        if (!isDemoMode && dbRef) {
+            dbRef.update({ play_sound: false });
+        }
+        soundRepellerActive = false;
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        showToast("🔇 Suara berhenti otomatis", "info");
+    }, 5000);
 }
 
 function stopSoundRepeller() {
     soundRepellerActive = false;
+    clearTimeout(soundRepellerTimer);
 
     const btn = $('btn-sound-repeller');
+    btn.disabled = false;
     btn.innerHTML = `<i class="fa-solid fa-volume-high"></i><span>PICU SUARA PENGUSIR</span>`;
-    btn.classList.remove('bg-slate-700', 'hover:bg-slate-800', 'shadow-slate-700/30', 'animate-pulse');
-    btn.classList.add('bg-orange-600', 'hover:bg-orange-700', 'shadow-orange-600/30');
 
     if (!isDemoMode && dbRef) {
-        // Beritahu ESP32 untuk stop suara
         dbRef.update({ play_sound: false });
     }
 
