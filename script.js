@@ -214,7 +214,7 @@ function updateConnectionStatusUI(status) {
         ping.classList.remove('hidden');
     } else if (status === 'demo') {
         container.className = "flex items-center space-x-2 bg-amber-50 dark:bg-amber-950/40 px-3 py-1.5 rounded-full border border-amber-200 dark:border-amber-800/60 shadow-xs transition-all-300";
-        text.innerText = "DEMO AKTIF";
+        text.innerText = "SIMULASI AKTIF";
         text.className = "text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider";
         icon.className = "fa-solid fa-laptop text-amber-600 dark:text-amber-400 text-xs";
         ping.classList.add('hidden');
@@ -237,7 +237,7 @@ function toggleDemoMode() {
     isDemoMode = $('demo-mode-toggle').checked;
     if (isDemoMode) {
         if (dbRef) dbRef.off();
-        showToast("Mode Demo Aktif (Virtual / Offline)", "info");
+        showToast("Mode Simulasi Aktif (Virtual / Offline)", "info");
         setupLocalDummyData();
     } else {
         const savedFb = localStorage.getItem('fb_config');
@@ -494,13 +494,13 @@ function onSimulationChange() {
         let det = parseInt($('stat-total-deteksi').innerText);
         if (pir) {
             det += 1;
-            logsData.unshift({ waktu: t, pir: true, pagar: speakerOn, ket: "Deteksi Pergerakan Hama — Suara Pengusir Aktif (Demo)" });
+            logsData.unshift({ waktu: t, pir: true, pagar: speakerOn, ket: "Deteksi Pergerakan Hama — Suara Pengusir Aktif (Simulasi)" });
             hourlyData[new Date().getHours()] += 1;
             if (detectionChart) {
                 detectionChart.data.datasets[0].data = hourlyData;
                 detectionChart.update();
             }
-            sendTelegramAlert("⚠️ *PERINGATAN DETEKSI MONYET (DEMO)* pada " + t);
+            sendTelegramAlert("⚠️ *PERINGATAN DETEKSI MONYET (SIMULASI)* pada " + t);
         }
         applyRealtimeData({ total_deteksi: det, pir_sensor: pir, play_sound: speakerOn, jarak_objek: jarak, logs: logsData });
     }
@@ -533,8 +533,8 @@ function triggerSoundRepeller() {
         dbRef.update({ play_sound: true });
         dbRef.child('logs').push().set({ waktu: t, pir: false, pagar: true, ket: "Suara pengusir dipicu manual oleh Admin" });
     } else {
-        // Mode demo: hanya update UI & log, tidak ada suara
-        logsData.unshift({ waktu: t, pir: false, pagar: true, ket: "Suara pengusir dipicu manual (Demo - tidak ada suara)" });
+        // Mode simulasi: hanya update UI & log, tidak ada suara
+        logsData.unshift({ waktu: t, pir: false, pagar: true, ket: "Suara pengusir dipicu manual (Simulasi - tidak ada suara)" });
         applyRealtimeData({
             total_deteksi: parseInt($('stat-total-deteksi').innerText),
             pir_sensor: false,
