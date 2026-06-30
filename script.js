@@ -387,7 +387,6 @@ function applyRealtimeData(data) {
         // Kirim notifikasi Telegram setiap ada deteksi baru dari ESP32
         sendTelegramAlert(buildDeteksiMessage({
             waktu: new Date().toLocaleTimeString('id-ID'),
-            jarak: data.jarak_objek,
             speakerOn: true,
             totalDeteksi: data.total_deteksi || 0,
             sumber: "Realtime (ESP32 via Firebase)"
@@ -558,7 +557,6 @@ function onSimulationChange() {
             const det = (parseInt($('stat-total-deteksi').innerText) || 0) + 1;
             sendTelegramAlert(buildDeteksiMessage({
                 waktu: t,
-                jarak: jarak,
                 speakerOn: speakerOn,
                 totalDeteksi: det,
                 sumber: "Realtime (ESP32 via Firebase)"
@@ -578,7 +576,6 @@ function onSimulationChange() {
             }
             sendTelegramAlert(buildDeteksiMessage({
                 waktu: t,
-                jarak: jarak,
                 speakerOn: speakerOn,
                 totalDeteksi: det,
                 sumber: "Mode Simulasi"
@@ -755,13 +752,11 @@ function renderTaniMembers() {
 // Dipakai baik di mode Live (Firebase/ESP32) maupun mode Simulasi,
 // supaya format pesan yang diterima anggota tani selalu konsisten.
 // -------------------------------------------------------------
-function buildDeteksiMessage({ waktu, jarak, speakerOn, totalDeteksi, sumber }) {
-    const jarakText = (jarak !== undefined && jarak !== null) ? `${parseFloat(jarak).toFixed(1)} meter` : "Tidak diketahui";
+function buildDeteksiMessage({ waktu, speakerOn, totalDeteksi, sumber }) {
     return `🐒 *PERINGATAN MONYET TERDETEKSI!*
 
 📍 Lokasi: Kebun Desa Tuna Harapan
 🕐 Waktu: ${waktu}
-📏 Jarak objek: ${jarakText}
 🔊 Suara pengusir: ${speakerOn ? 'AKTIF' : 'TIDAK AKTIF'}
 📊 Total deteksi hari ini: ${totalDeteksi} kali
 ${sumber ? `\n_Sumber: ${sumber}_` : ''}`;
