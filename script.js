@@ -376,13 +376,22 @@ function applyRealtimeData(data) {
         notifCleared = false;
     }
 
-    // AUTO TRIGGER SUARA: hanya jika PIR baru berubah false → true
+    // AUTO TRIGGER SUARA & NOTIFIKASI TELEGRAM: hanya jika PIR baru berubah false → true
     // dan BUKAN mode demo (artinya sinyal nyata dari ESP32 via Firebase)
     if (!isDemoMode && data.pir_sensor === true && lastPirState === false) {
         if (!soundRepellerActive) {
             showToast("🚨 Monyet Terdeteksi! Suara pengusir otomatis aktif!", "error");
             triggerSoundRepeller();
         }
+
+        // Kirim notifikasi Telegram setiap ada deteksi baru dari ESP32
+        sendTelegramAlert(buildDeteksiMessage({
+            waktu: new Date().toLocaleTimeString('id-ID'),
+            jarak: data.jarak_objek,
+            speakerOn: true,
+            totalDeteksi: data.total_deteksi || 0,
+            sumber: "Realtime (ESP32 via Firebase)"
+        }));
     }
     // Jika monyet pergi (PIR kembali false), hentikan suara otomatis
     if (!isDemoMode && data.pir_sensor === false && lastPirState === true) {
@@ -752,7 +761,10 @@ ${sumber ? `\n_Sumber: ${sumber}_` : ''}`;
 // ini aman dan tidak mengubah fungsi yang sudah berjalan sekarang.
 // -------------------------------------------------------------
 function sendTelegramAlert(text) {
-    if (!teleConfig.token || !teleConfig.chatId) return;
+    if (!teleConfig.token || !teleConfig.chatId) {
+        console.warn("Telegram belum dikonfigurasi: token atau chatId kosong.", teleConfig);
+        return;
+    }
 
     // Gabungkan kepala tani + seluruh anggota tani, hilangkan duplikat
     const allRecipients = [teleConfig.chatId, ...(teleConfig.taniMembers || [])];
@@ -763,7 +775,12 @@ function sendTelegramAlert(text) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'Markdown' })
-        }).catch(e => console.error(`Gagal kirim ke ${chatId}:`, e));
+        })
+        .then(res => res.json())
+        .then(json => {
+            if (!json.ok) console.error(`Telegram API error untuk ${chatId}:`, json.description);
+        })
+        .catch(e => console.error(`Gagal kirim ke ${chatId}:`, e));
     });
 }
 
