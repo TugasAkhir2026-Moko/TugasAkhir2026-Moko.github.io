@@ -299,12 +299,35 @@ function initFirebase() {
             if (firebase.apps.length === 0) firebase.initializeApp(fbConfig);
             dbRef = firebase.database().ref('monkeyguard');
 
-            dbRef.on('value', snap => {
-                const data = snap.val();
-                if (!isDemoMode) applyRealtimeData(data || {});
+            // Dengarkan perubahan pada node 'status' (struktur sesuai ESP32),
+            // dan dengarkan 'logs' secara terpisah karena tetap di root 'monkeyguard'.
+            const statusRef = dbRef.child('status');
+            const logsRef = dbRef.child('logs');
+            let latestStatus = {};
+            let latestLogs = null;
+
+            // Menjembatani perbedaan nama field: ESP32 mengirim 'pir',
+            // sedangkan seluruh logika dashboard memakai 'pir_sensor'.
+            // Normalisasi dilakukan di sini saja agar logika lain di
+            // dashboard tidak perlu diubah.
+            const normalizeStatus = (status) => ({
+                ...status,
+                pir_sensor: status.pir
+            });
+
+            statusRef.on('value', snap => {
+                latestStatus = normalizeStatus(snap.val() || {});
+                if (!isDemoMode) applyRealtimeData({ ...latestStatus, logs: latestLogs });
             }, err => {
                 showToast("Firebase Error: " + err.message, "error");
                 updateConnectionStatusUI('unconfigured');
+            });
+
+            logsRef.on('value', snap => {
+                latestLogs = snap.val();
+                if (!isDemoMode) applyRealtimeData({ ...latestStatus, logs: latestLogs });
+            }, err => {
+                showToast("Firebase Error: " + err.message, "error");
             });
 
             updateConnectionStatusUI('live');
@@ -503,12 +526,12 @@ function onSimulationChange() {
     const jarak = parseFloat($('sim-jarak').value);
 
     if (!isDemoMode && dbRef) {
-        dbRef.update({ pir_sensor: pir, play_sound: speakerOn, jarak_objek: jarak });
+        dbRef.child('status').update({ pir: pir, play_sound: speakerOn, jarak_objek: jarak });
         if (pir) {
             const t = new Date().toLocaleTimeString('id-ID');
             // Disesuaikan: field "pagar" -> "speaker"
             dbRef.child('logs').push().set({ waktu: t, pir: true, speaker: speakerOn, ket: "Terdeteksi via Simulasi Cloud" });
-            dbRef.child('total_deteksi').transaction(c => (c || 0) + 1);
+            dbRef.child('status/total_deteksi').transaction(c => (c || 0) + 1);
             const det = (parseInt($('stat-total-deteksi').innerText) || 0) + 1;
             sendTelegramAlert(buildDeteksiMessage({
                 waktu: t,
@@ -566,7 +589,7 @@ function triggerSoundRepeller() {
     const t = new Date().toLocaleTimeString('id-ID');
     if (!isDemoMode && dbRef) {
         // Kirim perintah ke Firebase → ESP32 baca → DFPlayer Mini bunyi
-        dbRef.update({ play_sound: true });
+        dbRef.child('status').update({ play_sound: true });
         // Disesuaikan: field "pagar" -> "speaker"
         dbRef.child('logs').push().set({ waktu: t, pir: false, speaker: true, ket: "Suara pengusir dipicu manual oleh Admin" });
     } else {
@@ -596,7 +619,7 @@ function stopSoundRepeller() {
 
     if (!isDemoMode && dbRef) {
         // Beritahu ESP32 bahwa durasi suara sudah selesai
-        dbRef.update({ play_sound: false });
+        dbRef.child('status').update({ play_sound: false });
     }
 
     showToast("🔇 Perintah stop suara dikirim", "info");
@@ -610,7 +633,7 @@ function clearAllLogs() {
 
     if (!isDemoMode && dbRef) {
         dbRef.child('logs').remove();
-        dbRef.update({ total_deteksi: 0 });
+        dbRef.child('status').update({ total_deteksi: 0 });
     } else {
         applyRealtimeData({ total_deteksi: 0, pir_sensor: false, play_sound: false, jarak_objek: 3, rssi: -55, logs: [] });
     }
