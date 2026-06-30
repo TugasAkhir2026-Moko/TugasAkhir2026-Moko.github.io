@@ -388,10 +388,10 @@ function setupLocalDummyData() {
         detectionChart.update();
     }
     logsData = [
-        { waktu: "09:30:15", pir: false, pagar: true, ket: "Kondisi kebun aman, pagar standby" },
-        { waktu: "11:12:45", pir: true,  pagar: true, ket: "Monyet Terdeteksi - Suara Pengusir Aktif" },
-        { waktu: "13:05:00", pir: false, pagar: true, ket: "Keadaan normal kembali" },
-        { waktu: "15:45:22", pir: true,  pagar: true, ket: "Monyet Terdeteksi - Respon Cepat" }
+        { waktu: "09:30:15", pir: false, speaker: true, ket: "Kondisi kebun aman, speaker standby" },
+        { waktu: "11:12:45", pir: true,  speaker: true, ket: "Monyet Terdeteksi - Suara Pengusir Aktif" },
+        { waktu: "13:05:00", pir: false, speaker: true, ket: "Keadaan normal kembali" },
+        { waktu: "15:45:22", pir: true,  speaker: true, ket: "Monyet Terdeteksi - Respon Cepat" }
     ];
     // Saat Mode Simulasi diaktifkan, PIR & Suara otomatis ON agar langsung terlihat aktif
     // (tetap bisa di-toggle manual ON/OFF setelahnya lewat tab Sensors)
@@ -434,7 +434,9 @@ function renderLogs() {
         const pirBdg = log.pir
             ? `<span class="px-2 py-0.5 bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-extrabold rounded-md text-[10px]">TERDETEKSI</span>`
             : `<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-md text-[10px]">Aman</span>`;
-        const pagarBdg = log.pagar
+        // Disesuaikan: field "pagar" diganti menjadi "speaker" agar konsisten
+        // dengan field play_sound pada node status utama (lihat applyRealtimeData)
+        const speakerBdg = log.speaker
             ? `<span class="px-2 py-0.5 bg-orange-100 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-extrabold rounded-md text-[10px]">SUARA ON</span>`
             : `<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-md text-[10px]">SIAGA</span>`;
 
@@ -442,7 +444,7 @@ function renderLogs() {
             <td class="py-4 px-6 font-bold text-slate-400">${idx + 1}</td>
             <td class="py-4 px-6 font-medium">${log.waktu}</td>
             <td class="py-4 px-6">${pirBdg}</td>
-            <td class="py-4 px-6">${pagarBdg}</td>
+            <td class="py-4 px-6">${speakerBdg}</td>
             <td class="py-4 px-6">${log.ket}</td>
         </tr>`;
 
@@ -452,7 +454,7 @@ function renderLogs() {
                 <div class="flex-1">
                     <p class="text-xs font-bold text-slate-800 dark:text-slate-100">MONYET TERDETEKSI</p>
                     <p class="text-[10px] text-slate-500">${log.ket}</p>
-                    <span class="text-[9px] bg-orange-500 text-white font-bold px-1.5 py-0.5 rounded-full mt-1 inline-block">${log.pagar ? 'SUARA AKTIF' : 'SIAGA'}</span>
+                    <span class="text-[9px] bg-orange-500 text-white font-bold px-1.5 py-0.5 rounded-full mt-1 inline-block">${log.speaker ? 'SUARA AKTIF' : 'SIAGA'}</span>
                 </div>
                 <span class="text-[9px] font-semibold text-slate-400">${log.waktu}</span>
             </div>`;
@@ -504,7 +506,8 @@ function onSimulationChange() {
         dbRef.update({ pir_sensor: pir, play_sound: speakerOn, jarak_objek: jarak });
         if (pir) {
             const t = new Date().toLocaleTimeString('id-ID');
-            dbRef.child('logs').push().set({ waktu: t, pir: true, pagar: speakerOn, ket: "Terdeteksi via Simulasi Cloud" });
+            // Disesuaikan: field "pagar" -> "speaker"
+            dbRef.child('logs').push().set({ waktu: t, pir: true, speaker: speakerOn, ket: "Terdeteksi via Simulasi Cloud" });
             dbRef.child('total_deteksi').transaction(c => (c || 0) + 1);
             const det = (parseInt($('stat-total-deteksi').innerText) || 0) + 1;
             sendTelegramAlert(buildDeteksiMessage({
@@ -520,7 +523,8 @@ function onSimulationChange() {
         let det = parseInt($('stat-total-deteksi').innerText);
         if (pir) {
             det += 1;
-            logsData.unshift({ waktu: t, pir: true, pagar: speakerOn, ket: "Deteksi Pergerakan Hama — Suara Pengusir Aktif (Simulasi)" });
+            // Disesuaikan: field "pagar" -> "speaker"
+            logsData.unshift({ waktu: t, pir: true, speaker: speakerOn, ket: "Deteksi Pergerakan Hama — Suara Pengusir Aktif (Simulasi)" });
             hourlyData[new Date().getHours()] += 1;
             if (detectionChart) {
                 detectionChart.data.datasets[0].data = hourlyData;
@@ -563,10 +567,12 @@ function triggerSoundRepeller() {
     if (!isDemoMode && dbRef) {
         // Kirim perintah ke Firebase → ESP32 baca → DFPlayer Mini bunyi
         dbRef.update({ play_sound: true });
-        dbRef.child('logs').push().set({ waktu: t, pir: false, pagar: true, ket: "Suara pengusir dipicu manual oleh Admin" });
+        // Disesuaikan: field "pagar" -> "speaker"
+        dbRef.child('logs').push().set({ waktu: t, pir: false, speaker: true, ket: "Suara pengusir dipicu manual oleh Admin" });
     } else {
         // Mode simulasi: hanya update UI & log, tidak ada suara
-        logsData.unshift({ waktu: t, pir: false, pagar: true, ket: "Suara pengusir dipicu manual (Simulasi - tidak ada suara)" });
+        // Disesuaikan: field "pagar" -> "speaker"
+        logsData.unshift({ waktu: t, pir: false, speaker: true, ket: "Suara pengusir dipicu manual (Simulasi - tidak ada suara)" });
         applyRealtimeData({
             total_deteksi: parseInt($('stat-total-deteksi').innerText),
             pir_sensor: false,
@@ -614,8 +620,9 @@ function clearAllLogs() {
 
 function exportLogs() {
     if (logsData.length === 0) return showToast("Log masih kosong!", "error");
-    let csv = "data:text/csv;charset=utf-8,No,Waktu,PIR,Pagar,Keterangan\n";
-    logsData.forEach((l, i) => csv += `${i + 1},${l.waktu},${l.pir ? 'PIR' : 'AMAN'},${l.pagar ? 'ON' : 'OFF'},"${l.ket}"\n`);
+    // Disesuaikan: header & isi kolom "Pagar" -> "Speaker", field log.pagar -> log.speaker
+    let csv = "data:text/csv;charset=utf-8,No,Waktu,PIR,Speaker,Keterangan\n";
+    logsData.forEach((l, i) => csv += `${i + 1},${l.waktu},${l.pir ? 'PIR' : 'AMAN'},${l.speaker ? 'ON' : 'OFF'},"${l.ket}"\n`);
 
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(csv));
