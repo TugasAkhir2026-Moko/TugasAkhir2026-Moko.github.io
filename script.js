@@ -402,7 +402,16 @@ function applyRealtimeData(data) {
     // Jarak deteksi PIR bersifat tetap (spesifikasi hardware HC-SR501), tidak perlu diperbarui realtime
 
     // Selalu update logsData & render, termasuk saat logs kosong/undefined (misal setelah "Kosongkan Log")
-    logsData = data.logs ? Object.values(data.logs).reverse() : [];
+    // Diurutkan eksplisit berdasarkan field 'waktu' (terbaru di atas), karena key Firebase
+    // bisa campuran push-key (dari dashboard) dan key berbasis timestamp (dari ESP32),
+    // sehingga urutan objek bawaan Firebase tidak selalu terjamin kronologis.
+    if (data.logs) {
+        logsData = Object.values(data.logs)
+            .filter(log => log && log.waktu)
+            .sort((a, b) => (a.waktu > b.waktu ? -1 : a.waktu < b.waktu ? 1 : 0));
+    } else {
+        logsData = [];
+    }
     renderLogs();
 
     $('sim-pir').checked = data.pir_sensor;
@@ -471,12 +480,18 @@ function renderLogs() {
             ? `<span class="px-2 py-0.5 bg-orange-100 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-extrabold rounded-md text-[10px]">SUARA ON</span>`
             : `<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-md text-[10px]">SIAGA</span>`;
 
+        // Fallback otomatis: ESP32 saat ini belum mengirim field "ket" pada log
+        // deteksi PIR, sehingga keterangan dibuat otomatis berdasarkan field lain.
+        const keterangan = log.ket || (log.pir
+            ? "Monyet terdeteksi oleh sensor PIR - Suara pengusir aktif"
+            : "Kondisi aman");
+
         rowsHtml += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
             <td class="py-4 px-6 font-bold text-slate-400">${idx + 1}</td>
             <td class="py-4 px-6 font-medium">${log.waktu}</td>
             <td class="py-4 px-6">${pirBdg}</td>
             <td class="py-4 px-6">${speakerBdg}</td>
-            <td class="py-4 px-6">${log.ket}</td>
+            <td class="py-4 px-6">${keterangan}</td>
         </tr>`;
 
         if (log.pir) {
@@ -484,7 +499,7 @@ function renderLogs() {
                 <div class="text-red-500 mt-1"><i class="fa-solid fa-triangle-exclamation"></i></div>
                 <div class="flex-1">
                     <p class="text-xs font-bold text-slate-800 dark:text-slate-100">MONYET TERDETEKSI</p>
-                    <p class="text-[10px] text-slate-500">${log.ket}</p>
+                    <p class="text-[10px] text-slate-500">${keterangan}</p>
                     <span class="text-[9px] bg-orange-500 text-white font-bold px-1.5 py-0.5 rounded-full mt-1 inline-block">${log.play_sound ? 'SUARA AKTIF' : 'SIAGA'}</span>
                 </div>
                 <span class="text-[9px] font-semibold text-slate-400">${log.waktu}</span>
