@@ -327,7 +327,7 @@ let lastPirState = false;
 // sudah diperbarui ESP32 sebelum notifikasi dikirim ke pengguna.
 // -------------------------------------------------------------
 let lastTelegramSent = 0;
-const TELEGRAM_COOLDOWN_MS = 20000; // 20 detik cooldown antar notifikasi
+const TELEGRAM_COOLDOWN_MS = 15000; // 15 detik cooldown antar notifikasi (sesuai cooldown ESP32)
 
 // Menerjemahkan nilai RSSI (dBm) menjadi label kualitas sinyal Wi-Fi
 function updateRssiUI(rssi) {
@@ -400,7 +400,7 @@ function applyRealtimeData(data) {
                     totalDeteksi: det,
                     sumber: "Realtime (ESP32 via Firebase)"
                 }));
-            }, 2000); // tunggu 2 detik agar total_deteksi Firebase sempat diperbarui
+            }, 1000); // tunggu 1 detik agar total_deteksi Firebase sempat diperbarui
         }
     }
     // Jika monyet pergi (PIR kembali false), hentikan suara otomatis
