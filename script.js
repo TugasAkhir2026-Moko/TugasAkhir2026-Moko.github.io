@@ -17,6 +17,11 @@ let isDemoMode = true;
 let hourlyData = Array(24).fill(0);
 let notifCleared = false; // Status apakah notifikasi sudah dibersihkan manual oleh user
 
+// Sumber kebenaran tunggal untuk jumlah total deteksi.
+// JANGAN baca angka ini dari innerText elemen di layar (bisa telat karena
+// animasi animateStatChange yang punya delay 250ms), selalu pakai variabel ini.
+let totalDeteksi = 0;
+
 let fbConfig = { apiKey: '', databaseURL: '', projectId: '' };
 // chatId = Chat ID Kepala Tani (penerima utama, aktif sekarang)
 // taniMembers = daftar Chat ID Anggota Tani (RUANG PENGEMBANGAN — lihat sendTelegramAlert)
@@ -366,7 +371,8 @@ function updateRssiUI(rssi) {
 }
 
 function applyRealtimeData(data) {
-    animateStatChange('stat-total-deteksi', data.total_deteksi || 0);
+    totalDeteksi = data.total_deteksi || 0; // sinkronkan sumber kebenaran tunggal
+    animateStatChange('stat-total-deteksi', totalDeteksi);
     updatePIRUI(data.pir_sensor);
     updateSpeakerUI(data.play_sound);
     updateRssiUI(data.rssi);
@@ -417,6 +423,14 @@ function applyRealtimeData(data) {
     $('sim-speaker').checked = data.play_sound || false;
     $('sim-jarak').value = data.jarak_objek ?? 3;
     $('jarak-val').innerText = parseFloat(data.jarak_objek ?? 3).toFixed(1) + " m";
+}
+
+// -------------------------------------------------------------
+// Jam "Update Terakhir" berjalan hidup setiap detik, agar tidak
+// terlihat diam/macet. Dipisah dari applyRealtimeData supaya
+// detiknya tetap jalan walau tidak ada data baru masuk.
+// -------------------------------------------------------------
+function tickClock() {
     $('last-update').innerText = new Date().toLocaleTimeString('id-ID');
 }
 
@@ -554,7 +568,7 @@ function onSimulationChange() {
             // Disesuaikan: field "pagar" -> "speaker"
             dbRef.child('logs').push().set({ waktu: t, pir: true, play_sound: speakerOn, ket: "Terdeteksi via Simulasi Cloud" });
             dbRef.child('status/total_deteksi').transaction(c => (c || 0) + 1);
-            const det = (parseInt($('stat-total-deteksi').innerText) || 0) + 1;
+            const det = totalDeteksi + 1;
             sendTelegramAlert(buildDeteksiMessage({
                 waktu: t,
                 speakerOn: speakerOn,
@@ -564,7 +578,7 @@ function onSimulationChange() {
         }
     } else {
         const t = new Date().toLocaleTimeString('id-ID');
-        let det = parseInt($('stat-total-deteksi').innerText);
+        let det = totalDeteksi;
         if (pir) {
             det += 1;
             // Disesuaikan: field "pagar" -> "speaker"
@@ -617,7 +631,7 @@ function triggerSoundRepeller() {
         // Disesuaikan: field "pagar" -> "speaker"
         logsData.unshift({ waktu: t, pir: false, play_sound: true, ket: "Suara pengusir dipicu manual (Simulasi - tidak ada suara)" });
         applyRealtimeData({
-            total_deteksi: parseInt($('stat-total-deteksi').innerText),
+            total_deteksi: totalDeteksi,
             pir_sensor: false,
             play_sound: true,
             jarak_objek: parseFloat($('sim-jarak').value),
@@ -808,4 +822,6 @@ window.onload = function () {
     initTheme();
     initChart();
     loadSavedCredentials();
+    tickClock();
+    setInterval(tickClock, 1000); // jam "Update Terakhir" berdetak tiap detik
 };
