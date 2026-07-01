@@ -349,7 +349,15 @@ function syncChartWithLogs() {
     hourlyData = Array(24).fill(0);
     logsData.forEach(log => {
         if (!log || !log.pir || !log.waktu) return;
-        const hour = parseInt(log.waktu.split(':')[0], 10);
+        // PENTING: field "waktu" bisa datang dalam 2 format berbeda:
+        //   - "HH:MM:SS"            -> dari trigger manual dashboard
+        //   - "YYYY-MM-DD HH:MM:SS" -> dari ESP32 asli (lihat struktur JSON di skripsi)
+        // Kalau ada spasi, ambil bagian SETELAH spasi (jam-nya) dulu, baru split ':'.
+        // Tanpa ini, parseInt("2026-06-29 23".split(':')[0]) akan salah baca
+        // sebagai tahun (2026) bukan jam (23), sehingga log dari ESP32 selalu
+        // gugur dari grafik (2026 tidak pernah < 24) — inilah sebab grafik diam.
+        const timePart = log.waktu.includes(' ') ? log.waktu.split(' ')[1] : log.waktu;
+        const hour = parseInt((timePart || '').split(':')[0], 10);
         if (!isNaN(hour) && hour >= 0 && hour < 24) hourlyData[hour] += 1;
     });
     if (detectionChart) {
@@ -361,30 +369,25 @@ function syncChartWithLogs() {
 function applyRealtimeData(data) {
     totalDeteksi = data.total_deteksi || 0; // sinkronkan sumber kebenaran tunggal
 
-    // Kalau PIR baru saja berubah false->true (deteksi baru terjadi) tapi
-    // Firebase belum sempat kirim angka total_deteksi yang sudah bertambah,
-    // paksa minimal 1 di tampilan dashboard — supaya TIDAK PERNAH kelihatan
-    // "0 deteksi" tepat di momen sedang ada deteksi (selalu sinkron dengan
-    // angka minimal 1 yang juga dipakai di pesan Telegram).
-    if (data.pir_sensor === true && lastPirState === false && totalDeteksi < 1) {
-        totalDeteksi = 1;
-    }
+    // Sumber kebenaran TUNGGAL untuk "ada deteksi baru": angka total_deteksi
+    // dari Firebase benar-benar naik dibanding nilai sebelumnya. Ini dipakai
+    // untuk grafik DAN notifikasi Telegram, dengan angka yang SAMA PERSIS
+    // dengan yang tampil di dashboard — jadi tidak mungkin lagi selisih.
+    const adaKenaikanDeteksi = totalDeteksi > previousTotalDeteksi;
 
     animateStatChange('stat-total-deteksi', totalDeteksi);
 
     // GRAFIK REAL-TIME: begitu totalDeteksi bertambah, langsung tambahkan
-    // batang di jam sekarang TANPA menunggu data node 'logs' resmi sampai
-    // (yang kadang telat/terpisah dari update total_deteksi di Firebase).
-    // syncChartWithLogs() di bawah nanti akan menghitung ulang dari logsData
-    // yang sesungguhnya begitu datang, jadi angka ini otomatis terkoreksi
-    // ke nilai yang akurat begitu data log resmi tiba.
-    if (totalDeteksi > previousTotalDeteksi && detectionChart) {
+    // batang di jam sekarang. syncChartWithLogs() di bawah nanti akan
+    // menghitung ulang dari logsData yang sesungguhnya begitu datang, jadi
+    // angka ini otomatis terkoreksi ke nilai akurat begitu data log resmi tiba.
+    if (adaKenaikanDeteksi && detectionChart) {
         const jamSekarang = new Date().getHours();
         hourlyData[jamSekarang] += (totalDeteksi - previousTotalDeteksi);
         detectionChart.data.datasets[0].data = hourlyData;
         detectionChart.update();
     }
-    previousTotalDeteksi = totalDeteksi;
+
     updatePIRUI(data.pir_sensor);
     updateSpeakerUI(data.play_sound);
     updateRssiUI(data.rssi);
@@ -394,46 +397,28 @@ function applyRealtimeData(data) {
         notifCleared = false;
     }
 
-    // AUTO TRIGGER SUARA & NOTIFIKASI TELEGRAM: hanya jika PIR baru berubah false → true
-    if (data.pir_sensor === true && lastPirState === false) {
-        if (!soundRepellerActive) {
-            showToast("🚨 Monyet Terdeteksi! Suara pengusir otomatis aktif!", "error");
-            triggerSoundRepeller();
-        }
-
-        // PENTING: ESP32 menulis field "pir_sensor" dan "total_deteksi" lewat DUA
-        // request terpisah ke Firebase, jadi bisa datang tidak bersamaan (race
-        // condition). Kalau kita kirim Telegram langsung pakai `data.total_deteksi`
-        // di sini, angkanya bisa masih yang LAMA (belum ke-update ESP32) sehingga
-        // beda 1 dengan angka yang tampil di dashboard setelah update kedua tiba.
-        // Solusi: tunggu sebentar, lalu ambil ulang nilai total_deteksi TERBARU
-        // langsung dari Firebase sesaat sebelum mengirim pesan.
-        if (dbRef) {
-            setTimeout(() => {
-                dbRef.child('status/total_deteksi').once('value').then(snap => {
-                    // Minimal 1: kalau ada deteksi baru terjadi (blok ini hanya jalan
-                    // saat pir berubah false->true), maka angkanya TIDAK MUNGKIN 0.
-                    // Kalau Firebase masih mengembalikan 0/kosong (belum sempat
-                    // ke-update oleh ESP32), tetap tampilkan minimal 1.
-                    const finalTotal = Math.max(1, snap.val() ?? data.total_deteksi ?? 1);
-                    sendTelegramAlert(buildDeteksiMessage({
-                        waktu: new Date().toLocaleTimeString('id-ID'),
-                        speakerOn: true,
-                        totalDeteksi: finalTotal,
-                        sumber: "Realtime (ESP32 via Firebase)"
-                    }));
-                }).catch(() => {
-                    // Fallback kalau gagal ambil ulang: pakai angka yang ada, minimal 1
-                    sendTelegramAlert(buildDeteksiMessage({
-                        waktu: new Date().toLocaleTimeString('id-ID'),
-                        speakerOn: true,
-                        totalDeteksi: Math.max(1, data.total_deteksi || 1),
-                        sumber: "Realtime (ESP32 via Firebase)"
-                    }));
-                });
-            }, 600); // jeda 600ms, cukup untuk menunggu write kedua dari ESP32
-        }
+    // AUTO TRIGGER SUARA: hanya jika PIR baru berubah false → true
+    if (data.pir_sensor === true && lastPirState === false && !soundRepellerActive) {
+        showToast("🚨 Monyet Terdeteksi! Suara pengusir otomatis aktif!", "error");
+        triggerSoundRepeller();
     }
+
+    // NOTIFIKASI TELEGRAM: dikirim TEPAT saat total_deteksi bertambah, memakai
+    // variabel `totalDeteksi` yang sama persis dengan yang baru saja
+    // ditampilkan ke dashboard di atas. Tidak ada lagi delay/tebakan waktu
+    // untuk menunggu write kedua dari ESP32 — begitu Firebase konfirmasi
+    // angkanya naik, itu juga angka yang dikirim ke Telegram. Dijamin sama.
+    if (adaKenaikanDeteksi) {
+        sendTelegramAlert(buildDeteksiMessage({
+            waktu: new Date().toLocaleTimeString('id-ID'),
+            speakerOn: !!data.play_sound,
+            totalDeteksi: totalDeteksi,
+            sumber: "Realtime (ESP32 via Firebase)"
+        }));
+    }
+
+    previousTotalDeteksi = totalDeteksi;
+
     // Jika monyet pergi (PIR kembali false), hentikan suara otomatis
     if (data.pir_sensor === false && lastPirState === true) {
         if (soundRepellerActive) stopSoundRepeller();
