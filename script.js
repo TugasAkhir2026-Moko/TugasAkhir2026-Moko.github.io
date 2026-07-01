@@ -390,13 +390,34 @@ function applyRealtimeData(data) {
             triggerSoundRepeller();
         }
 
-        // Kirim notifikasi Telegram setiap ada deteksi baru dari ESP32
-        sendTelegramAlert(buildDeteksiMessage({
-            waktu: new Date().toLocaleTimeString('id-ID'),
-            speakerOn: true,
-            totalDeteksi: data.total_deteksi || 0,
-            sumber: "Realtime (ESP32 via Firebase)"
-        }));
+        // PENTING: ESP32 menulis field "pir_sensor" dan "total_deteksi" lewat DUA
+        // request terpisah ke Firebase, jadi bisa datang tidak bersamaan (race
+        // condition). Kalau kita kirim Telegram langsung pakai `data.total_deteksi`
+        // di sini, angkanya bisa masih yang LAMA (belum ke-update ESP32) sehingga
+        // beda 1 dengan angka yang tampil di dashboard setelah update kedua tiba.
+        // Solusi: tunggu sebentar, lalu ambil ulang nilai total_deteksi TERBARU
+        // langsung dari Firebase sesaat sebelum mengirim pesan.
+        if (dbRef) {
+            setTimeout(() => {
+                dbRef.child('status/total_deteksi').once('value').then(snap => {
+                    const finalTotal = snap.val() ?? data.total_deteksi ?? 0;
+                    sendTelegramAlert(buildDeteksiMessage({
+                        waktu: new Date().toLocaleTimeString('id-ID'),
+                        speakerOn: true,
+                        totalDeteksi: finalTotal,
+                        sumber: "Realtime (ESP32 via Firebase)"
+                    }));
+                }).catch(() => {
+                    // Fallback kalau gagal ambil ulang: pakai angka yang ada
+                    sendTelegramAlert(buildDeteksiMessage({
+                        waktu: new Date().toLocaleTimeString('id-ID'),
+                        speakerOn: true,
+                        totalDeteksi: data.total_deteksi || 0,
+                        sumber: "Realtime (ESP32 via Firebase)"
+                    }));
+                });
+            }, 600); // jeda 600ms, cukup untuk menunggu write kedua dari ESP32
+        }
     }
     // Jika monyet pergi (PIR kembali false), hentikan suara otomatis
     if (!isDemoMode && data.pir_sensor === false && lastPirState === true) {
