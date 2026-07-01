@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonkeyGuard Sistem pengusir Hama Monyet</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Firebase Compat -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        lightBg:      '#F0F4F8',
+                        lightSidebar: '#1A5276',
+                        lightAccent:  '#27AE60',
+                        lightAlert:   '#E74C3C',
+                        darkBg:       '#0F172A',
+                        darkCard:     '#1E293B',
+                        darkAccent:   '#22C55E',
+                        darkAlert:    '#EF4444',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- CSS Kustom -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="font-sans transition-colors duration-300 bg-[#F0F4F8] dark:bg-darkBg text-slate-800 dark:text-slate-100 min-h-screen flex overflow-x-hidden">
+
+    <!-- ============================================================= -->
+    <!-- BAGIAN A: HALAMAN LOGIN                                        -->
+    <!-- ============================================================= -->
+    <div id="login-overlay" class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/80 dark:bg-black/90 backdrop-blur-md transition-opacity duration-500">
+        <div class="bg-white dark:bg-darkCard w-full max-w-md p-8 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 m-4">
+            <div class="text-center mb-6">
+                <div class="inline-flex p-3 bg-emerald-500 rounded-2xl shadow-lg shadow-emerald-500/30 mb-3">
+                    <i class="fa-solid fa-shield-cat text-3xl text-white animate-bounce"></i>
+                </div>
+                <h2 class="text-2xl font-extrabold tracking-tight">Login MonkeyGuard</h2>
+                <p class="text-xs text-slate-400 mt-1">Sistem Monitoring Pengusir Hama Monyet</p>
+            </div>
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Username</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fa-regular fa-user"></i></span>
+                        <input type="text" id="login-username" required class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Username">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Password</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" id="login-password" required class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Password">
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-emerald-600/30">
+                    Masuk Ke Dashboard
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- BAGIAN B: SIDEBAR NAVIGASI                                     -->
+    <!-- ============================================================= -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 flex flex-col w-64 bg-[#1A5276] text-white transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out shadow-2xl justify-between">
+        <div>
+            <div class="flex items-center justify-between px-6 py-5 border-b border-[#2471A3]">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2 bg-emerald-500 rounded-xl shadow-lg shadow-emerald-500/30"><i class="fa-solid fa-shield-cat text-lg text-white"></i></div>
+                    <h1 class="text-lg font-bold tracking-wider">MonkeyGuard</h1>
+                </div>
+                <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-[#2471A3]"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <nav class="mt-6 px-4 space-y-1.5">
+                <a href="#dashboard" onclick="switchTab('dashboard')" class="nav-item flex items-center space-x-3.5 px-4 py-3 rounded-xl transition-all-300 bg-white/10 text-white font-medium" id="menu-dashboard">
+                    <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i><span>Dashboard Utama</span>
+                </a>
+                <a href="#logs" onclick="switchTab('logs')" class="nav-item flex items-center space-x-3.5 px-4 py-3 rounded-xl transition-all-300 text-slate-300 hover:bg-white/5 hover:text-white" id="menu-logs">
+                    <i class="fa-solid fa-list-ul w-5 text-center text-lg"></i><span>Log Deteksi</span>
+                </a>
+                <a href="#sensors" onclick="switchTab('sensors')" class="nav-item flex items-center space-x-3.5 px-4 py-3 rounded-xl transition-all-300 text-slate-300 hover:bg-white/5 hover:text-white" id="menu-sensors">
+                    <i class="fa-solid fa-tower-broadcast w-5 text-center text-lg"></i><span>Status Sensor</span>
+                </a>
+                <a href="#settings" onclick="switchTab('settings')" class="nav-item flex items-center space-x-3.5 px-4 py-3 rounded-xl transition-all-300 text-slate-300 hover:bg-white/5 hover:text-white" id="menu-settings">
+                    <i class="fa-solid fa-gears w-5 text-center text-lg"></i><span>Integrasi & Alat</span>
+                </a>
+            </nav>
+        </div>
+
+        <div class="p-4 border-t border-[#2471A3] space-y-4">
+            <button onclick="toggleDarkMode()" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-black/15 hover:bg-black/25 transition-all-300 group">
+                <span class="text-sm font-medium text-slate-200">Mode Tampilan</span>
+                <div class="flex items-center space-x-2">
+                    <i id="theme-icon-light" class="fa-solid fa-sun text-amber-400 text-sm transition-transform duration-300 group-hover:rotate-45"></i>
+                    <span id="theme-text" class="text-xs text-slate-300">Terang</span>
+                    <i id="theme-icon-dark" class="fa-solid fa-moon text-indigo-300 text-sm hidden"></i>
+                </div>
+            </button>
+            <div class="flex items-center justify-between p-2 bg-black/10 rounded-xl">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-lg bg-emerald-600 flex items-center justify-center font-bold text-white shadow-inner">MG</div>
+                    <div>
+                        <p class="text-xs font-semibold text-white">Admin</p>
+                        <p class="text-[10px] text-slate-300">ID: Guard-01</p>
+                    </div>
+                </div>
+                <button onclick="handleLogout()" title="Keluar" class="p-2 hover:bg-red-500/20 text-red-300 hover:text-red-100 rounded-lg transition-colors"><i class="fa-solid fa-right-from-bracket"></i></button>
+            </div>
+        </div>
+    </aside>
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 z-40 bg-black/50 hidden lg:hidden backdrop-blur-xs"></div>
+
+    <!-- ============================================================= -->
+    <!-- BAGIAN C: PANEL UTAMA / KONTEN                                 -->
+    <!-- ============================================================= -->
+    <div class="flex-1 min-w-0 lg:pl-64 flex flex-col min-h-screen">
+
+        <!-- HEADER -->
+        <header class="sticky top-0 z-30 bg-white/80 dark:bg-[#1E293B]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-300 px-4 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex items-center space-x-4">
+                <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"><i class="fa-solid fa-bars text-xl"></i></button>
+                <div>
+                    <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400">Monitoring System</h2>
+                    <h1 id="page-title" class="text-xl font-bold text-slate-800 dark:text-white">Dashboard Utama</h1>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
+                <!-- Status Koneksi -->
+                <div class="flex items-center space-x-4">
+                    <div id="connection-container" class="flex items-center space-x-2 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800/60 shadow-xs transition-colors duration-300">
+                        <span class="relative flex h-2 w-2" id="ping-indicator">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <i id="connection-icon" class="fa-solid fa-wifi text-emerald-600 dark:text-emerald-400 text-xs"></i>
+                        <span id="status-text" class="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">REALTIME LIVE</span>
+                    </div>
+                    <div class="hidden md:block text-right">
+                        <p class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Update Terakhir</p>
+                        <p id="last-update" class="text-xs font-medium text-slate-600 dark:text-slate-300">Memuat...</p>
+                    </div>
+
+                    <!-- Notifikasi -->
+                    <div class="relative">
+                        <button onclick="toggleNotificationPanel()" class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 relative">
+                            <i class="fa-regular fa-bell text-lg"></i>
+                            <span id="notif-badge-dot" class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                        </button>
+                        <div id="notif-dropdown" class="absolute right-0 mt-2 w-80 bg-white dark:bg-darkCard rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 py-2 hidden z-50">
+                            <div class="px-4 py-2 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                                <span class="font-bold text-sm">Notifikasi Terbaru</span>
+                                <span class="text-xs text-emerald-500 hover:underline cursor-pointer" onclick="clearNotifications()">Hapus</span>
+                            </div>
+                            <div id="notif-list-dropdown" class="max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/50"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- KONTEN UTAMA -->
+        <main class="flex-1 p-4 lg:p-8 space-y-6">
+
+            <!-- TAB 1: DASHBOARD -->
+            <div id="tab-dashboard" class="space-y-6">
+                <!-- Kartu Statistik -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+                    <div class="bg-white dark:bg-darkCard p-5 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80 hover:shadow-md transition-all-300 flex items-center justify-between group">
+                        <div class="space-y-2">
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Deteksi Hari Ini</p>
+                            <div class="flex items-baseline space-x-2">
+                                <span id="stat-total-deteksi" class="text-3xl font-extrabold text-slate-800 dark:text-white transition-all duration-300">0</span>
+                                <span class="text-xs font-medium text-emerald-500"><i class="fa-solid fa-arrow-trend-up"></i> Live</span>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-blue-500/10 text-blue-500 dark:text-blue-400 rounded-2xl group-hover:scale-110 transition-transform duration-300"><i class="fa-solid fa-bullseye text-2xl"></i></div>
+                    </div>
+
+                    <div id="card-pir" class="bg-white dark:bg-darkCard p-5 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80 hover:shadow-md transition-all-300 flex items-center justify-between group">
+                        <div class="space-y-2">
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status Sensor PIR</p>
+                            <span id="stat-pir-status" class="text-lg font-bold text-slate-500">Siaga</span>
+                        </div>
+                        <div id="icon-pir-container" class="icon-stat-box p-4 bg-emerald-500/10 text-lightAccent dark:text-darkAccent rounded-2xl"><i id="icon-pir" class="fa-solid fa-person-walking-dashed-line text-2xl"></i></div>
+                    </div>
+
+                    <div id="card-speaker" class="bg-white dark:bg-darkCard p-5 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80 hover:shadow-md transition-all-300 flex items-center justify-between group">
+                        <div class="space-y-2">
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status Speaker</p>
+                            <span id="stat-speaker" class="text-lg font-bold text-[#27AE60] dark:text-[#22C55E]">SIAGA</span>
+                        </div>
+                        <div id="icon-speaker-container" class="icon-stat-box p-4 bg-emerald-500/10 text-lightAccent dark:text-darkAccent rounded-2xl"><i id="icon-speaker" class="fa-solid fa-volume-high text-2xl"></i></div>
+                    </div>
+
+                    <div class="bg-white dark:bg-darkCard p-5 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80 hover:shadow-md transition-all-300 flex items-center justify-between group">
+                        <div class="space-y-2">
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Jarak Deteksi PIR</p>
+                            <div class="flex items-baseline space-x-1">
+                                <span id="stat-jarak-pir" class="text-lg font-bold text-slate-800 dark:text-white">± 6 m</span>
+                                <span class="text-xs text-slate-400 font-normal">(HC-SR501)</span>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-amber-500/10 text-amber-500 rounded-2xl"><i class="fa-solid fa-satellite-dish text-2xl"></i></div>
+                    </div>
+                </div>
+
+                <!-- Grafik & Peringatan -->
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80 xl:col-span-2">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 dark:text-white">Tren Deteksi 24 Jam</h3>
+                                <p class="text-xs text-slate-400">Frekuensi kemunculan hama monyet per jam</p>
+                            </div>
+                        </div>
+                        <div class="relative h-[280px] w-full"><canvas id="detectionChart"></canvas></div>
+                    </div>
+
+                    <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-base font-bold text-slate-800 dark:text-white">Peringatan Terbaru</h3>
+                                <span class="px-2 py-1 text-[10px] bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400 font-bold rounded-md uppercase tracking-wider animate-pulse">Critical</span>
+                            </div>
+                            <div id="alert-list" class="space-y-3 max-h-[250px] overflow-y-auto pr-1"></div>
+                        </div>
+                        <div class="pt-4 border-t border-slate-100 dark:border-slate-800/80 mt-4 space-y-2">
+                            <p class="text-[10px] text-slate-400 text-center">Tekan sekali untuk memutar suara pengusir via DFPlayer Mini (otomatis berhenti)</p>
+                            <button id="btn-sound-repeller" onclick="triggerSoundRepeller()" class="w-full py-3 bg-orange-600 hover:bg-orange-700 active:scale-[0.98] text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-orange-600/30 flex items-center justify-center space-x-2 disabled:opacity-70 disabled:cursor-not-allowed">
+                                <i class="fa-solid fa-bell"></i><span>PICU SUARA PENGUSIR</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabel Log -->
+                <div class="bg-white dark:bg-darkCard rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80 overflow-hidden">
+                    <div class="px-6 py-5 border-b border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 dark:text-white">Log Kejadian Terbaru</h3>
+                            <p class="text-xs text-slate-400">Respon sistem dan status sensor terkini</p>
+                        </div>
+                        <button onclick="switchTab('logs')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300">
+                            Lihat Semua Log <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 dark:bg-slate-800/40 text-slate-400 text-[10px] uppercase tracking-wider font-bold">
+                                    <th class="py-4 px-6">No</th>
+                                    <th class="py-4 px-6">Waktu</th>
+                                    <th class="py-4 px-6">Sensor PIR</th>
+                                    <th class="py-4 px-6">Speaker</th>
+                                    <th class="py-4 px-6">Keterangan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="log-table-body" class="divide-y divide-slate-100 dark:divide-slate-800/50 text-xs text-slate-600 dark:text-slate-300"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: LOG LENGKAP -->
+            <div id="tab-logs" class="space-y-6 hidden">
+                <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h3 class="text-lg font-bold">Riwayat Seluruh Deteksi</h3>
+                            <p class="text-xs text-slate-400">Log lengkap aktivitas sistem pengusir hama monyet</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="exportLogs()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center space-x-2"><i class="fa-solid fa-file-export"></i><span>Ekspor CSV</span></button>
+                            <button onclick="clearAllLogs()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold flex items-center space-x-2"><i class="fa-solid fa-trash-can"></i><span>Kosongkan Log</span></button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 dark:bg-slate-800/40 text-slate-400 text-[10px] uppercase tracking-wider font-bold">
+                                    <th class="py-4 px-6">No</th>
+                                    <th class="py-4 px-6">Waktu</th>
+                                    <th class="py-4 px-6">Sensor PIR</th>
+                                    <th class="py-4 px-6">Speaker</th>
+                                    <th class="py-4 px-6">Keterangan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="full-log-table-body" class="divide-y divide-slate-100 dark:divide-slate-800/50 text-xs text-slate-600 dark:text-slate-300"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: SENSOR & SIMULATOR -->
+            <div id="tab-sensors" class="space-y-6 hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80">
+                        <h3 class="text-base font-bold mb-2">Status Sensor Real-time</h3>
+                        <p class="text-xs text-slate-400 mb-6">Data langsung dari ESP32 via Firebase (tidak bisa diedit manual)</p>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
+                                <div>
+                                    <p class="text-sm font-semibold">Sensor PIR</p>
+                                    <p class="text-[11px] text-slate-400">Status deteksi gerakan monyet saat ini</p>
+                                </div>
+                                <span id="sensor-pir-live" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500">Siaga</span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl">
+                                <div>
+                                    <p class="text-sm font-semibold">Suara Pengusir (DFPlayer)</p>
+                                    <p class="text-[11px] text-slate-400">Status speaker saat ini</p>
+                                </div>
+                                <span id="sensor-speaker-live" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500">Siaga</span>
+                            </div>
+                            <div class="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl space-y-1">
+                                <div class="flex justify-between items-center">
+                                    <p class="text-sm font-semibold">Jarak Objek Terdeteksi</p>
+                                    <span id="jarak-val" class="text-xs font-bold text-slate-500">3.0 m</span>
+                                </div>
+                                <p class="text-[10px] text-slate-400">Jangkauan maksimum sensor PIR HC-SR501: 6 meter</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-darkCard p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 space-y-4">
+                        <h3 class="text-base font-bold">Kondisi Fisik Modul IoT</h3>
+                        <p class="text-xs text-slate-400">Status hardware ESP32, DFPlayer Mini & Speaker</p>
+                        <div class="space-y-3 text-xs">
+                            <div class="flex justify-between items-center p-3 border-b border-slate-100 dark:border-slate-800/50"><span class="text-slate-400">Sinyal Wi-Fi (RSSI)</span><span id="stat-rssi" class="font-bold text-emerald-500">-55 dBm (Sangat Baik)</span></div>
+                            <div class="flex justify-between items-center p-3 border-b border-slate-100 dark:border-slate-800/50"><span class="text-slate-400">Modul Audio</span><span class="font-bold text-emerald-500">DFPlayer Mini (Aktif)</span></div>
+                            <div class="flex justify-between items-center p-3 border-b border-slate-100 dark:border-slate-800/50"><span class="text-slate-400">Speaker</span><span class="font-bold text-slate-700 dark:text-slate-300">Full Range 3W (Terpasang)</span></div>
+                            <div class="flex justify-between items-center p-3"><span class="text-slate-400">Jarak Deteksi PIR</span><span class="font-bold text-slate-700 dark:text-slate-300">± 6 meter (HC-SR501)</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: INTEGRASI -->
+            <div id="tab-settings" class="space-y-6 hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="p-2 bg-amber-500/10 text-amber-500 rounded-lg"><i class="fa-solid fa-database text-lg"></i></div>
+                            <div>
+                                <h3 class="text-base font-bold">Integrasi Firebase Realtime</h3>
+                                <p class="text-xs text-slate-400">Sinkronisasi status dan log dengan database cloud</p>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">API KEY</label>
+                                <input type="password" id="fb-apikey" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Database URL</label>
+                                <input type="text" id="fb-dburl" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Project ID</label>
+                                <input type="text" id="fb-projectid" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            </div>
+                            <button onclick="saveFirebaseSettings()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-600/20">Simpan Kredensial Firebase</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="p-2 bg-blue-500/10 text-blue-500 rounded-lg"><i class="fa-solid fa-paper-plane text-lg"></i></div>
+                            <div>
+                                <h3 class="text-base font-bold">Bot Telegram Notifikasi</h3>
+                                <p class="text-xs text-slate-400">Kirim peringatan deteksi ke Kepala Tani & Anggota Tani</p>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Bot Token Telegram</label>
+                                <input type="password" id="tele-token" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Chat ID Kepala Tani</label>
+                                <input type="text" id="tele-chatid" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Contoh: 123456789">
+                                <p class="text-[10px] text-slate-400 mt-1">Penerima utama notifikasi, wajib diisi</p>
+                            </div>
+                            <button onclick="saveTelegramSettings()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-600/20 mb-2">Simpan Pengaturan</button>
+                            <button onclick="sendTestTelegram()" class="w-full py-3 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all"><i class="fa-regular fa-paper-plane mr-1"></i> Kirim Pesan Uji Coba</button>
+
+                            <!-- ====================================================== -->
+                            <!-- RUANG PENGEMBANGAN: Daftar Anggota Tani Penerima Notifikasi -->
+                            <!-- Fitur ini disiapkan sebagai kerangka untuk pengembangan  -->
+                            <!-- selanjutnya (broadcast notifikasi ke banyak petani).      -->
+                            <!-- Saat ini data tersimpan di localStorage & Firebase, namun  -->
+                            <!-- pengiriman pesan ke seluruh anggota tani perlu diaktifkan  -->
+                            <!-- lebih lanjut sesuai kebutuhan penelitian.                  -->
+                            <!-- ====================================================== -->
+                            <div class="pt-4 border-t border-dashed border-slate-200 dark:border-slate-700 mt-2">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Daftar Anggota Tani</label>
+                                    <span class="px-2 py-0.5 text-[9px] bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-bold rounded-md uppercase tracking-wider">Pengembangan</span>
+                                </div>
+                                <p class="text-[10px] text-slate-400 mb-3">Tambahkan Chat ID anggota tani lain agar ikut menerima notifikasi deteksi monyet</p>
+
+                                <div class="flex space-x-2 mb-3">
+                                    <input type="text" id="tele-member-input" placeholder="Chat ID anggota tani" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                    <button onclick="addTaniMember()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all"><i class="fa-solid fa-plus"></i></button>
+                                </div>
+
+                                <div id="tele-member-list" class="space-y-2 max-h-40 overflow-y-auto"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="mt-auto py-4 px-8 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400">&copy; 2026 MonkeyGuard. Hak Cipta Dilindungi Undang-Undang.</footer>
+    </div>
+
+    <!-- TOAST NOTIFIKASI -->
+    <div id="toast-box" class="fixed bottom-5 right-5 z-[999] px-5 py-3 rounded-xl bg-slate-900 text-white text-xs font-medium shadow-2xl flex items-center space-x-2 transform translate-y-20 opacity-0 transition-all duration-300"><span id="toast-message"></span></div>
+
+    <!-- JavaScript Eksternal -->
+    <script src="script.js?v=4"></script>
+</body>
+</html>
