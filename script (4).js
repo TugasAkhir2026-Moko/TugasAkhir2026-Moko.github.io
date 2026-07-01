@@ -299,35 +299,12 @@ function initFirebase() {
             if (firebase.apps.length === 0) firebase.initializeApp(fbConfig);
             dbRef = firebase.database().ref('monkeyguard');
 
-            // Dengarkan perubahan pada node 'status' (struktur sesuai ESP32),
-            // dan dengarkan 'logs' secara terpisah karena tetap di root 'monkeyguard'.
-            const statusRef = dbRef.child('status');
-            const logsRef = dbRef.child('logs');
-            let latestStatus = {};
-            let latestLogs = null;
-
-            // Menjembatani perbedaan nama field: ESP32 mengirim 'pir',
-            // sedangkan seluruh logika dashboard memakai 'pir_sensor'.
-            // Normalisasi dilakukan di sini saja agar logika lain di
-            // dashboard tidak perlu diubah.
-            const normalizeStatus = (status) => ({
-                ...status,
-                pir_sensor: status.pir
-            });
-
-            statusRef.on('value', snap => {
-                latestStatus = normalizeStatus(snap.val() || {});
-                if (!isDemoMode) applyRealtimeData({ ...latestStatus, logs: latestLogs });
+            dbRef.on('value', snap => {
+                const data = snap.val();
+                if (!isDemoMode) applyRealtimeData(data || {});
             }, err => {
                 showToast("Firebase Error: " + err.message, "error");
                 updateConnectionStatusUI('unconfigured');
-            });
-
-            logsRef.on('value', snap => {
-                latestLogs = snap.val();
-                if (!isDemoMode) applyRealtimeData({ ...latestStatus, logs: latestLogs });
-            }, err => {
-                showToast("Firebase Error: " + err.message, "error");
             });
 
             updateConnectionStatusUI('live');
@@ -341,6 +318,16 @@ function initFirebase() {
 
 // Status PIR sebelumnya — mencegah suara terpicu berulang untuk deteksi yang sama
 let lastPirState = false;
+
+// -------------------------------------------------------------
+// DEBOUNCE TELEGRAM — mencegah notifikasi terkirim 2x dalam
+// waktu berdekatan akibat sensitivitas sensor PIR yang tinggi.
+// Telegram hanya bisa terkirim max 1x per TELEGRAM_COOLDOWN_MS.
+// Delay 2 detik sebelum kirim memastikan total_deteksi di Firebase
+// sudah diperbarui ESP32 sebelum notifikasi dikirim ke pengguna.
+// -------------------------------------------------------------
+let lastTelegramSent = 0;
+const TELEGRAM_COOLDOWN_MS = 15000; // 15 detik cooldown antar notifikasi (sesuai cooldown ESP32)
 
 // Menerjemahkan nilai RSSI (dBm) menjadi label kualitas sinyal Wi-Fi
 function updateRssiUI(rssi) {
@@ -366,57 +353,74 @@ function updateRssiUI(rssi) {
 }
 
 function applyRealtimeData(data) {
-    animateStatChange('stat-total-deteksi', data.total_deteksi || 0);
-    updatePIRUI(data.pir_sensor);
-    updateSpeakerUI(data.play_sound);
+    // -------------------------------------------------------------
+    // OPSI B FIX: Baca dari node "status" (path ESP32 saat ini) ATAU
+    // dari root langsung (path ESP32 versi baru). Keduanya didukung
+    // agar dashboard tetap jalan apapun versi kode ESP32 yang dipakai.
+    // -------------------------------------------------------------
+    const pir       = data.status?.pir        ?? data.pir_sensor   ?? false;
+    const playSound = data.status?.play_sound  ?? data.play_sound   ?? false;
+    const totalDet  = data.status?.total_deteksi ?? data.total_deteksi ?? 0;
+    const jarak     = data.status?.jarak_objek ?? data.jarak_objek  ?? 3;
+
+    animateStatChange('stat-total-deteksi', totalDet);
+    updatePIRUI(pir);
+    updateSpeakerUI(playSound);
     updateRssiUI(data.rssi);
 
     // Deteksi baru (PIR false -> true) membuka kembali notifikasi yang sempat dibersihkan
-    if (data.pir_sensor === true && lastPirState === false) {
+    if (pir === true && lastPirState === false) {
         notifCleared = false;
     }
 
-    // AUTO TRIGGER SUARA & NOTIFIKASI TELEGRAM: hanya jika PIR baru berubah false → true
+    // AUTO TRIGGER SUARA: hanya jika PIR baru berubah false → true
     // dan BUKAN mode demo (artinya sinyal nyata dari ESP32 via Firebase)
-    if (!isDemoMode && data.pir_sensor === true && lastPirState === false) {
+    if (!isDemoMode && pir === true && lastPirState === false) {
         if (!soundRepellerActive) {
             showToast("🚨 Monyet Terdeteksi! Suara pengusir otomatis aktif!", "error");
             triggerSoundRepeller();
         }
 
-        // Kirim notifikasi Telegram setiap ada deteksi baru dari ESP32
-        sendTelegramAlert(buildDeteksiMessage({
-            waktu: new Date().toLocaleTimeString('id-ID'),
-            speakerOn: true,
-            totalDeteksi: data.total_deteksi || 0,
-            sumber: "Realtime (ESP32 via Firebase)"
-        }));
+        // -------------------------------------------------------------
+        // FIX NOTIFIKASI 2X & TOTAL DETEKSI 0:
+        // 1. Cek debounce dulu — kalau belum lewat 20 detik, skip
+        // 2. Delay 2 detik sebelum kirim — beri waktu ESP32 update
+        //    total_deteksi ke Firebase sebelum notifikasi terkirim,
+        //    sehingga nilai total_deteksi di pesan Telegram akurat
+        // -------------------------------------------------------------
+        const now = Date.now();
+        if (now - lastTelegramSent > TELEGRAM_COOLDOWN_MS) {
+            lastTelegramSent = now;
+            const waktuDeteksi = new Date().toLocaleTimeString('id-ID');
+            // Ambil total_deteksi dari Firebase dengan setTimeout 1.5 detik
+            // agar ESP32 sempat update nilai terbaru sebelum notifikasi terkirim
+            setTimeout(() => {
+                // Baca dari UI yang sudah diperbarui onValue listener
+                // (lebih aman dari dbRef.child karena tidak butuh Firebase v8/v9 spesifik)
+                const det = parseInt($('stat-total-deteksi').innerText) || totalDet || 0;
+                sendTelegramAlert(buildDeteksiMessage({
+                    waktu: waktuDeteksi,
+                    speakerOn: true,
+                    totalDeteksi: det,
+                    sumber: "Realtime (ESP32 via Firebase)"
+                }));
+            }, 1500);
+        }
     }
     // Jika monyet pergi (PIR kembali false), hentikan suara otomatis
-    if (!isDemoMode && data.pir_sensor === false && lastPirState === true) {
+    if (!isDemoMode && pir === false && lastPirState === true) {
         if (soundRepellerActive) stopSoundRepeller();
     }
-    lastPirState = data.pir_sensor || false;
+    lastPirState = pir;
 
-    // Jarak deteksi PIR bersifat tetap (spesifikasi hardware HC-SR501), tidak perlu diperbarui realtime
-
-    // Selalu update logsData & render, termasuk saat logs kosong/undefined (misal setelah "Kosongkan Log")
-    // Diurutkan eksplisit berdasarkan field 'waktu' (terbaru di atas), karena key Firebase
-    // bisa campuran push-key (dari dashboard) dan key berbasis timestamp (dari ESP32),
-    // sehingga urutan objek bawaan Firebase tidak selalu terjamin kronologis.
-    if (data.logs) {
-        logsData = Object.values(data.logs)
-            .filter(log => log && log.waktu)
-            .sort((a, b) => (a.waktu > b.waktu ? -1 : a.waktu < b.waktu ? 1 : 0));
-    } else {
-        logsData = [];
-    }
+    // Selalu update logsData & render, termasuk saat logs kosong/undefined
+    logsData = data.logs ? Object.values(data.logs).reverse() : [];
     renderLogs();
 
-    $('sim-pir').checked = data.pir_sensor;
-    $('sim-speaker').checked = data.play_sound || false;
-    $('sim-jarak').value = data.jarak_objek ?? 3;
-    $('jarak-val').innerText = parseFloat(data.jarak_objek ?? 3).toFixed(1) + " m";
+    $('sim-pir').checked = pir;
+    $('sim-speaker').checked = playSound;
+    $('sim-jarak').value = jarak;
+    $('jarak-val').innerText = parseFloat(jarak).toFixed(1) + " m";
     $('last-update').innerText = new Date().toLocaleTimeString('id-ID');
 }
 
@@ -428,10 +432,10 @@ function setupLocalDummyData() {
         detectionChart.update();
     }
     logsData = [
-        { waktu: "09:30:15", pir: false, play_sound: true, ket: "Kondisi kebun aman, speaker standby" },
-        { waktu: "11:12:45", pir: true,  play_sound: true, ket: "Monyet Terdeteksi - Suara Pengusir Aktif" },
-        { waktu: "13:05:00", pir: false, play_sound: true, ket: "Keadaan normal kembali" },
-        { waktu: "15:45:22", pir: true,  play_sound: true, ket: "Monyet Terdeteksi - Respon Cepat" }
+        { waktu: "09:30:15", pir: false, speaker: true, ket: "Kondisi kebun aman, speaker standby" },
+        { waktu: "11:12:45", pir: true,  speaker: true, ket: "Monyet Terdeteksi - Suara Pengusir Aktif" },
+        { waktu: "13:05:00", pir: false, speaker: true, ket: "Keadaan normal kembali" },
+        { waktu: "15:45:22", pir: true,  speaker: true, ket: "Monyet Terdeteksi - Respon Cepat" }
     ];
     // Saat Mode Simulasi diaktifkan, PIR & Suara otomatis ON agar langsung terlihat aktif
     // (tetap bisa di-toggle manual ON/OFF setelahnya lewat tab Sensors)
@@ -474,23 +478,18 @@ function renderLogs() {
         const pirBdg = log.pir
             ? `<span class="px-2 py-0.5 bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-extrabold rounded-md text-[10px]">TERDETEKSI</span>`
             : `<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-md text-[10px]">Aman</span>`;
-        // Disesuaikan: field dari ESP32 bernama "play_sound", bukan "speaker"/"pagar"
-        const speakerBdg = log.play_sound
+        // Disesuaikan: field "pagar" diganti menjadi "speaker" agar konsisten
+        // dengan field play_sound pada node status utama (lihat applyRealtimeData)
+        const speakerBdg = log.speaker
             ? `<span class="px-2 py-0.5 bg-orange-100 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-extrabold rounded-md text-[10px]">SUARA ON</span>`
             : `<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-md text-[10px]">SIAGA</span>`;
-
-        // Fallback otomatis: ESP32 saat ini belum mengirim field "ket" pada log
-        // deteksi PIR, sehingga keterangan dibuat otomatis berdasarkan field lain.
-        const keterangan = log.ket || (log.pir
-            ? "Monyet terdeteksi oleh sensor PIR - Suara pengusir aktif"
-            : "Kondisi aman");
 
         rowsHtml += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
             <td class="py-4 px-6 font-bold text-slate-400">${idx + 1}</td>
             <td class="py-4 px-6 font-medium">${log.waktu}</td>
             <td class="py-4 px-6">${pirBdg}</td>
             <td class="py-4 px-6">${speakerBdg}</td>
-            <td class="py-4 px-6">${keterangan}</td>
+            <td class="py-4 px-6">${log.ket}</td>
         </tr>`;
 
         if (log.pir) {
@@ -498,8 +497,8 @@ function renderLogs() {
                 <div class="text-red-500 mt-1"><i class="fa-solid fa-triangle-exclamation"></i></div>
                 <div class="flex-1">
                     <p class="text-xs font-bold text-slate-800 dark:text-slate-100">MONYET TERDETEKSI</p>
-                    <p class="text-[10px] text-slate-500">${keterangan}</p>
-                    <span class="text-[9px] bg-orange-500 text-white font-bold px-1.5 py-0.5 rounded-full mt-1 inline-block">${log.play_sound ? 'SUARA AKTIF' : 'SIAGA'}</span>
+                    <p class="text-[10px] text-slate-500">${log.ket}</p>
+                    <span class="text-[9px] bg-orange-500 text-white font-bold px-1.5 py-0.5 rounded-full mt-1 inline-block">${log.speaker ? 'SUARA AKTIF' : 'SIAGA'}</span>
                 </div>
                 <span class="text-[9px] font-semibold text-slate-400">${log.waktu}</span>
             </div>`;
@@ -548,12 +547,12 @@ function onSimulationChange() {
     const jarak = parseFloat($('sim-jarak').value);
 
     if (!isDemoMode && dbRef) {
-        dbRef.child('status').update({ pir: pir, play_sound: speakerOn, jarak_objek: jarak });
+        dbRef.update({ pir_sensor: pir, play_sound: speakerOn, jarak_objek: jarak });
         if (pir) {
             const t = new Date().toLocaleTimeString('id-ID');
             // Disesuaikan: field "pagar" -> "speaker"
-            dbRef.child('logs').push().set({ waktu: t, pir: true, play_sound: speakerOn, ket: "Terdeteksi via Simulasi Cloud" });
-            dbRef.child('status/total_deteksi').transaction(c => (c || 0) + 1);
+            dbRef.child('logs').push().set({ waktu: t, pir: true, speaker: speakerOn, ket: "Terdeteksi via Simulasi Cloud" });
+            dbRef.child('total_deteksi').transaction(c => (c || 0) + 1);
             const det = (parseInt($('stat-total-deteksi').innerText) || 0) + 1;
             sendTelegramAlert(buildDeteksiMessage({
                 waktu: t,
@@ -568,7 +567,7 @@ function onSimulationChange() {
         if (pir) {
             det += 1;
             // Disesuaikan: field "pagar" -> "speaker"
-            logsData.unshift({ waktu: t, pir: true, play_sound: speakerOn, ket: "Deteksi Pergerakan Hama — Suara Pengusir Aktif (Simulasi)" });
+            logsData.unshift({ waktu: t, pir: true, speaker: speakerOn, ket: "Deteksi Pergerakan Hama — Suara Pengusir Aktif (Simulasi)" });
             hourlyData[new Date().getHours()] += 1;
             if (detectionChart) {
                 detectionChart.data.datasets[0].data = hourlyData;
@@ -609,13 +608,13 @@ function triggerSoundRepeller() {
     const t = new Date().toLocaleTimeString('id-ID');
     if (!isDemoMode && dbRef) {
         // Kirim perintah ke Firebase → ESP32 baca → DFPlayer Mini bunyi
-        dbRef.child('status').update({ play_sound: true });
+        dbRef.update({ play_sound: true });
         // Disesuaikan: field "pagar" -> "speaker"
-        dbRef.child('logs').push().set({ waktu: t, pir: false, play_sound: true, ket: "Suara pengusir dipicu manual oleh Admin" });
+        dbRef.child('logs').push().set({ waktu: t, pir: false, speaker: true, ket: "Suara pengusir dipicu manual oleh Admin" });
     } else {
         // Mode simulasi: hanya update UI & log, tidak ada suara
         // Disesuaikan: field "pagar" -> "speaker"
-        logsData.unshift({ waktu: t, pir: false, play_sound: true, ket: "Suara pengusir dipicu manual (Simulasi - tidak ada suara)" });
+        logsData.unshift({ waktu: t, pir: false, speaker: true, ket: "Suara pengusir dipicu manual (Simulasi - tidak ada suara)" });
         applyRealtimeData({
             total_deteksi: parseInt($('stat-total-deteksi').innerText),
             pir_sensor: false,
@@ -639,7 +638,7 @@ function stopSoundRepeller() {
 
     if (!isDemoMode && dbRef) {
         // Beritahu ESP32 bahwa durasi suara sudah selesai
-        dbRef.child('status').update({ play_sound: false });
+        dbRef.update({ play_sound: false });
     }
 
     showToast("🔇 Perintah stop suara dikirim", "info");
@@ -653,7 +652,7 @@ function clearAllLogs() {
 
     if (!isDemoMode && dbRef) {
         dbRef.child('logs').remove();
-        dbRef.child('status').update({ total_deteksi: 0 });
+        dbRef.update({ total_deteksi: 0 });
     } else {
         applyRealtimeData({ total_deteksi: 0, pir_sensor: false, play_sound: false, jarak_objek: 3, rssi: -55, logs: [] });
     }
@@ -663,9 +662,9 @@ function clearAllLogs() {
 
 function exportLogs() {
     if (logsData.length === 0) return showToast("Log masih kosong!", "error");
-    // Field log: "pir" dan "play_sound" (sesuai struktur yang dikirim ESP32)
+    // Disesuaikan: header & isi kolom "Pagar" -> "Speaker", field log.pagar -> log.speaker
     let csv = "data:text/csv;charset=utf-8,No,Waktu,PIR,Speaker,Keterangan\n";
-    logsData.forEach((l, i) => csv += `${i + 1},${l.waktu},${l.pir ? 'PIR' : 'AMAN'},${l.play_sound ? 'ON' : 'OFF'},"${l.ket}"\n`);
+    logsData.forEach((l, i) => csv += `${i + 1},${l.waktu},${l.pir ? 'PIR' : 'AMAN'},${l.speaker ? 'ON' : 'OFF'},"${l.ket}"\n`);
 
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(csv));
@@ -757,6 +756,7 @@ function buildDeteksiMessage({ waktu, speakerOn, totalDeteksi, sumber }) {
 
 📍 Lokasi: Kebun Desa Tuna Harapan
 🕐 Waktu: ${waktu}
+🚨 Peringatan Terbaru: MONYET TERDETEKSI
 🔊 Suara pengusir: ${speakerOn ? 'AKTIF' : 'TIDAK AKTIF'}
 📊 Total deteksi hari ini: ${totalDeteksi} kali
 ${sumber ? `\n_Sumber: ${sumber}_` : ''}`;
@@ -770,10 +770,7 @@ ${sumber ? `\n_Sumber: ${sumber}_` : ''}`;
 // ini aman dan tidak mengubah fungsi yang sudah berjalan sekarang.
 // -------------------------------------------------------------
 function sendTelegramAlert(text) {
-    if (!teleConfig.token || !teleConfig.chatId) {
-        console.warn("Telegram belum dikonfigurasi: token atau chatId kosong.", teleConfig);
-        return;
-    }
+    if (!teleConfig.token || !teleConfig.chatId) return;
 
     // Gabungkan kepala tani + seluruh anggota tani, hilangkan duplikat
     const allRecipients = [teleConfig.chatId, ...(teleConfig.taniMembers || [])];
@@ -784,12 +781,7 @@ function sendTelegramAlert(text) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'Markdown' })
-        })
-        .then(res => res.json())
-        .then(json => {
-            if (!json.ok) console.error(`Telegram API error untuk ${chatId}:`, json.description);
-        })
-        .catch(e => console.error(`Gagal kirim ke ${chatId}:`, e));
+        }).catch(e => console.error(`Gagal kirim ke ${chatId}:`, e));
     });
 }
 
