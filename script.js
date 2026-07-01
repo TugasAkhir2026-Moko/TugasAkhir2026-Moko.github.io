@@ -391,16 +391,28 @@ function applyRealtimeData(data) {
         const now = Date.now();
         if (now - lastTelegramSent > TELEGRAM_COOLDOWN_MS) {
             lastTelegramSent = now;
-            setTimeout(() => {
-                const det = parseInt($('stat-total-deteksi').innerText) || 0;
+            const waktuDeteksi = new Date().toLocaleTimeString('id-ID');
+            // Ambil total_deteksi langsung dari Firebase sekali (one-time read)
+            // agar nilainya selalu akurat — tidak bergantung pada UI yang mungkin
+            // belum sempat diperbarui saat Telegram dikirim
+            const pathTotalDeteksi = totalDet > 0 ? 'status/total_deteksi' : 'total_deteksi';
+            dbRef.child(pathTotalDeteksi).once('value').then(snap => {
+                const det = snap.val() ?? parseInt($('stat-total-deteksi').innerText) ?? 0;
                 sendTelegramAlert(buildDeteksiMessage({
-                    waktu: new Date().toLocaleTimeString('id-ID'),
-                    jarak: jarak,
+                    waktu: waktuDeteksi,
                     speakerOn: true,
                     totalDeteksi: det,
                     sumber: "Realtime (ESP32 via Firebase)"
                 }));
-            }, 1000); // tunggu 1 detik agar total_deteksi Firebase sempat diperbarui
+            }).catch(() => {
+                const det = parseInt($('stat-total-deteksi').innerText) || 0;
+                sendTelegramAlert(buildDeteksiMessage({
+                    waktu: waktuDeteksi,
+                    speakerOn: true,
+                    totalDeteksi: det,
+                    sumber: "Realtime (ESP32 via Firebase)"
+                }));
+            });
         }
     }
     // Jika monyet pergi (PIR kembali false), hentikan suara otomatis
@@ -552,7 +564,6 @@ function onSimulationChange() {
             const det = (parseInt($('stat-total-deteksi').innerText) || 0) + 1;
             sendTelegramAlert(buildDeteksiMessage({
                 waktu: t,
-                jarak: jarak,
                 speakerOn: speakerOn,
                 totalDeteksi: det,
                 sumber: "Realtime (ESP32 via Firebase)"
@@ -572,7 +583,6 @@ function onSimulationChange() {
             }
             sendTelegramAlert(buildDeteksiMessage({
                 waktu: t,
-                jarak: jarak,
                 speakerOn: speakerOn,
                 totalDeteksi: det,
                 sumber: "Mode Simulasi"
@@ -749,13 +759,12 @@ function renderTaniMembers() {
 // Dipakai baik di mode Live (Firebase/ESP32) maupun mode Simulasi,
 // supaya format pesan yang diterima anggota tani selalu konsisten.
 // -------------------------------------------------------------
-function buildDeteksiMessage({ waktu, jarak, speakerOn, totalDeteksi, sumber }) {
-    const jarakText = (jarak !== undefined && jarak !== null) ? `${parseFloat(jarak).toFixed(1)} meter` : "Tidak diketahui";
+function buildDeteksiMessage({ waktu, speakerOn, totalDeteksi, sumber }) {
     return `🐒 *PERINGATAN MONYET TERDETEKSI!*
 
 📍 Lokasi: Kebun Desa Tuna Harapan
 🕐 Waktu: ${waktu}
-📏 Jarak objek: ${jarakText}
+🚨 Peringatan Terbaru: MONYET TERDETEKSI
 🔊 Suara pengusir: ${speakerOn ? 'AKTIF' : 'TIDAK AKTIF'}
 📊 Total deteksi hari ini: ${totalDeteksi} kali
 ${sumber ? `\n_Sumber: ${sumber}_` : ''}`;
