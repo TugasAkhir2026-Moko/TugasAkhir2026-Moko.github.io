@@ -353,19 +353,29 @@ function updateRssiUI(rssi) {
 }
 
 function applyRealtimeData(data) {
-    animateStatChange('stat-total-deteksi', data.total_deteksi || 0);
-    updatePIRUI(data.pir_sensor);
-    updateSpeakerUI(data.play_sound);
+    // -------------------------------------------------------------
+    // OPSI B FIX: Baca dari node "status" (path ESP32 saat ini) ATAU
+    // dari root langsung (path ESP32 versi baru). Keduanya didukung
+    // agar dashboard tetap jalan apapun versi kode ESP32 yang dipakai.
+    // -------------------------------------------------------------
+    const pir       = data.status?.pir        ?? data.pir_sensor   ?? false;
+    const playSound = data.status?.play_sound  ?? data.play_sound   ?? false;
+    const totalDet  = data.status?.total_deteksi ?? data.total_deteksi ?? 0;
+    const jarak     = data.status?.jarak_objek ?? data.jarak_objek  ?? 3;
+
+    animateStatChange('stat-total-deteksi', totalDet);
+    updatePIRUI(pir);
+    updateSpeakerUI(playSound);
     updateRssiUI(data.rssi);
 
     // Deteksi baru (PIR false -> true) membuka kembali notifikasi yang sempat dibersihkan
-    if (data.pir_sensor === true && lastPirState === false) {
+    if (pir === true && lastPirState === false) {
         notifCleared = false;
     }
 
     // AUTO TRIGGER SUARA: hanya jika PIR baru berubah false → true
     // dan BUKAN mode demo (artinya sinyal nyata dari ESP32 via Firebase)
-    if (!isDemoMode && data.pir_sensor === true && lastPirState === false) {
+    if (!isDemoMode && pir === true && lastPirState === false) {
         if (!soundRepellerActive) {
             showToast("🚨 Monyet Terdeteksi! Suara pengusir otomatis aktif!", "error");
             triggerSoundRepeller();
@@ -383,7 +393,6 @@ function applyRealtimeData(data) {
             lastTelegramSent = now;
             setTimeout(() => {
                 const det = parseInt($('stat-total-deteksi').innerText) || 0;
-                const jarak = parseFloat($('sim-jarak').value) || 0;
                 sendTelegramAlert(buildDeteksiMessage({
                     waktu: new Date().toLocaleTimeString('id-ID'),
                     jarak: jarak,
@@ -395,21 +404,19 @@ function applyRealtimeData(data) {
         }
     }
     // Jika monyet pergi (PIR kembali false), hentikan suara otomatis
-    if (!isDemoMode && data.pir_sensor === false && lastPirState === true) {
+    if (!isDemoMode && pir === false && lastPirState === true) {
         if (soundRepellerActive) stopSoundRepeller();
     }
-    lastPirState = data.pir_sensor || false;
+    lastPirState = pir;
 
-    // Jarak deteksi PIR bersifat tetap (spesifikasi hardware HC-SR501), tidak perlu diperbarui realtime
-
-    // Selalu update logsData & render, termasuk saat logs kosong/undefined (misal setelah "Kosongkan Log")
+    // Selalu update logsData & render, termasuk saat logs kosong/undefined
     logsData = data.logs ? Object.values(data.logs).reverse() : [];
     renderLogs();
 
-    $('sim-pir').checked = data.pir_sensor;
-    $('sim-speaker').checked = data.play_sound || false;
-    $('sim-jarak').value = data.jarak_objek ?? 3;
-    $('jarak-val').innerText = parseFloat(data.jarak_objek ?? 3).toFixed(1) + " m";
+    $('sim-pir').checked = pir;
+    $('sim-speaker').checked = playSound;
+    $('sim-jarak').value = jarak;
+    $('jarak-val').innerText = parseFloat(jarak).toFixed(1) + " m";
     $('last-update').innerText = new Date().toLocaleTimeString('id-ID');
 }
 
